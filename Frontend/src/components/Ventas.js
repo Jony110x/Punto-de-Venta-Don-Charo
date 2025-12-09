@@ -1,6 +1,120 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Search, ShoppingCart, Trash2, Scan, DollarSign, Banknote } from 'lucide-react';
 import { getProductos, createVenta, buscarPorCodigo, getCotizaciones } from '../api/api';
+
+// Componente memoizado con props mínimas
+const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotizaciones }) => {
+  const convertirPrecio = (precioARS) => {
+    if (monedaSeleccionada === 'USD') return precioARS * cotizaciones.USD;
+    if (monedaSeleccionada === 'BRL') return precioARS * cotizaciones.BRL;
+    return precioARS;
+  };
+
+  const getSimbolo = () => {
+    if (monedaSeleccionada === 'USD') return 'US$';
+    if (monedaSeleccionada === 'BRL') return 'R$';
+    return '$';
+  };
+
+  const precioNormal = convertirPrecio(producto.precio_venta);
+  const precioEfectivo = precioNormal * 0.92;
+  
+  return (
+    <div
+      style={{
+        backgroundColor: 'white',
+        border: '2px solid #e5e7eb',
+        padding: '0.5rem',
+        borderRadius: '0.375rem',
+        transition: 'border-color 0.2s',
+        cursor: 'pointer',
+        height: 'fit-content',
+        willChange: 'border-color',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden'
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+      onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+    >
+      <div style={{ marginBottom: '0.375rem' }}>
+        <h3 style={{ 
+          fontWeight: 'bold', 
+          marginBottom: '0.125rem', 
+          fontSize: '0.8125rem',
+          lineHeight: '1.2'
+        }}>
+          {producto.nombre}
+        </h3>
+        <p style={{ fontSize: '0.6875rem', color: '#6b7280', lineHeight: '1.2' }}>
+          {producto.categoria || 'Sin categoría'}
+        </p>
+        {producto.codigo_barras && (
+          <p style={{ fontSize: '0.625rem', color: '#9ca3af', marginTop: '0.125rem' }}>
+            CB: {producto.codigo_barras}
+          </p>
+        )}
+      </div>
+
+      <div style={{ marginBottom: '0.375rem' }}>
+        <div style={{ marginBottom: '0.375rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.125rem' }}>
+            <DollarSign size={12} style={{ color: '#1e40af' }} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 600, color: '#1e40af' }}>
+              NORMAL
+            </span>
+          </div>
+          <div style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#1e40af', lineHeight: '1' }}>
+            {getSimbolo()} {precioNormal.toFixed(2)}
+          </div>
+        </div>
+        
+        <div style={{
+          backgroundColor: '#d1fae5',
+          padding: '0.25rem 0.375rem',
+          borderRadius: '0.25rem',
+          border: '1px solid #86efac'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.125rem' }}>
+            <Banknote size={10} style={{ color: '#059669' }} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 600, color: '#059669' }}>
+              Efectivo (-8%)
+            </span>
+          </div>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 'bold', color: '#059669', lineHeight: '1' }}>
+            {getSimbolo()} {precioEfectivo.toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.25rem' }}>
+        <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+          Stock: {producto.stock}
+        </span>
+        <button
+          onClick={() => onAgregar(producto)}
+          className="btn btn-primary"
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.25rem', 
+            padding: '0.25rem 0.5rem', 
+            fontSize: '0.75rem',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <Plus size={12} />
+          Agregar
+        </button>
+      </div>
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // Comparación manual: solo re-renderizar si cambian producto, moneda o cotizaciones
+  return prevProps.producto.id === nextProps.producto.id &&
+         prevProps.monedaSeleccionada === nextProps.monedaSeleccionada &&
+         prevProps.cotizaciones.USD === nextProps.cotizaciones.USD &&
+         prevProps.cotizaciones.BRL === nextProps.cotizaciones.BRL;
+});
 
 const Ventas = () => {
   const [productos, setProductos] = useState([]);
@@ -20,7 +134,21 @@ const Ventas = () => {
     if (codigoInputRef.current) {
       codigoInputRef.current.focus();
     }
-  }, []);
+
+    // Listener para Enter que finaliza venta cuando hay items en carrito
+    const handleGlobalKeyPress = (e) => {
+      if (e.key === 'Enter' && carrito.length > 0) {
+        // Solo finalizar si NO estamos en el input de código de barras
+        if (document.activeElement !== codigoInputRef.current) {
+          e.preventDefault();
+          finalizarVenta();
+        }
+      }
+    };
+
+    document.addEventListener('keypress', handleGlobalKeyPress);
+    return () => document.removeEventListener('keypress', handleGlobalKeyPress);
+  }, [carrito]);
 
   const cargarCotizaciones = async () => {
     try {
@@ -112,29 +240,31 @@ const Ventas = () => {
     (p.categoria && p.categoria.toLowerCase().includes(busqueda.toLowerCase()))
   );
 
-  const agregarAlCarrito = (producto) => {
-    const itemExistente = carrito.find(item => item.producto_id === producto.id);
-    
-    if (itemExistente) {
-      if (itemExistente.cantidad >= producto.stock) {
-        alert('No hay suficiente stock');
-        return;
+  const agregarAlCarrito = useCallback((producto) => {
+    setCarrito(prevCarrito => {
+      const itemExistente = prevCarrito.find(item => item.producto_id === producto.id);
+      
+      if (itemExistente) {
+        if (itemExistente.cantidad >= producto.stock) {
+          alert('No hay suficiente stock');
+          return prevCarrito;
+        }
+        return prevCarrito.map(item =>
+          item.producto_id === producto.id
+            ? { ...item, cantidad: item.cantidad + 1 }
+            : item
+        );
+      } else {
+        return [...prevCarrito, {
+          producto_id: producto.id,
+          nombre: producto.nombre,
+          precio_unitario: producto.precio_venta || producto.precio,
+          cantidad: 1,
+          stock_disponible: producto.stock
+        }];
       }
-      setCarrito(carrito.map(item =>
-        item.producto_id === producto.id
-          ? { ...item, cantidad: item.cantidad + 1 }
-          : item
-      ));
-    } else {
-      setCarrito([...carrito, {
-        producto_id: producto.id,
-        nombre: producto.nombre,
-        precio_unitario: producto.precio_venta || producto.precio,
-        cantidad: 1,
-        stock_disponible: producto.stock
-      }]);
-    }
-  };
+    });
+  }, []);
 
   const modificarCantidad = (producto_id, nuevaCantidad) => {
     if (nuevaCantidad <= 0) {
@@ -193,7 +323,7 @@ const Ventas = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
         <p>Cargando productos...</p>
       </div>
     );
@@ -203,33 +333,42 @@ const Ventas = () => {
   const mostrarProductos = busqueda.length > 0 || codigoBarras.length > 0;
 
   return (
-    <div style={{ padding: '1.5rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+    <div style={{ 
+      padding: '1rem',
+      height: 'calc(100vh - 70px)', // Altura total menos header
+      overflow: 'hidden'
+    }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1fr', // 50/50
+        gap: '1rem',
+        height: '100%'
+      }}>
         {/* Panel de búsqueda */}
-        <div>
-          <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.75rem' }}>
             Nueva Venta
           </h2>
 
-          {/* Lector de Código de Barras */}
+          {/* Lector de Código de Barras - MÁS COMPACTO */}
           <div style={{
             backgroundColor: '#dbeafe',
-            padding: '1rem',
+            padding: '0.75rem',
             borderRadius: '0.5rem',
             border: '2px solid #3b82f6',
-            marginBottom: '1rem'
+            marginBottom: '0.75rem'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <Scan size={24} style={{ color: '#1e40af' }} />
-              <label style={{ fontWeight: 600, color: '#1e40af' }}>
-                Escanear Código de Barras
+              <Scan size={20} style={{ color: '#1e40af' }} />
+              <label style={{ fontWeight: 600, color: '#1e40af', fontSize: '0.875rem' }}>
+                Código de Barras
               </label>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
                 ref={codigoInputRef}
                 type="text"
-                placeholder="Escanee o escriba el código..."
+                placeholder="Escanee o escriba..."
                 value={codigoBarras}
                 onChange={(e) => setCodigoBarras(e.target.value)}
                 onKeyPress={handleCodigoKeyPress}
@@ -237,182 +376,131 @@ const Ventas = () => {
                 className="input"
                 style={{ 
                   flex: 1,
-                  fontSize: '1.125rem',
-                  backgroundColor: 'white'
+                  fontSize: '1rem',
+                  backgroundColor: 'white',
+                  padding: '0.5rem'
                 }}
               />
               <button
                 onClick={() => buscarProductoPorCodigo(codigoBarras)}
                 disabled={buscandoCodigo || !codigoBarras.trim()}
                 className="btn btn-primary"
-                style={{ minWidth: '100px' }}
+                style={{ minWidth: '80px', padding: '0.5rem' }}
               >
                 {buscandoCodigo ? 'Buscando...' : 'Buscar'}
               </button>
             </div>
-            <p style={{ fontSize: '0.875rem', color: '#1e40af', marginTop: '0.5rem' }}>
-              💡 Presione Enter después de escanear
-            </p>
           </div>
 
-          {/* Búsqueda manual */}
+          {/* Búsqueda manual - MÁS COMPACTA */}
           <div style={{
             backgroundColor: 'white',
-            padding: '1rem',
+            padding: '0.75rem',
             borderRadius: '0.5rem',
             border: '2px solid #e5e7eb',
-            marginBottom: '1rem'
+            marginBottom: '0.75rem'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Search size={20} style={{ color: '#6b7280' }} />
+              <Search size={18} style={{ color: '#6b7280' }} />
               <input
                 type="text"
-                placeholder="Buscar producto por nombre..."
+                placeholder="Buscar producto..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 className="input"
-                style={{ border: 'none', outline: 'none' }}
+                style={{ border: 'none', outline: 'none', padding: '0.25rem' }}
               />
             </div>
           </div>
 
-          {/* Productos - Solo mostrar si hay búsqueda */}
+          {/* Productos - SCROLL INDIVIDUAL */}
           {!mostrarProductos ? (
             <div style={{
               backgroundColor: 'white',
-              padding: '3rem',
+              padding: '2rem',
               borderRadius: '0.5rem',
               border: '2px solid #e5e7eb',
-              textAlign: 'center'
+              textAlign: 'center',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              <Search size={64} style={{ color: '#d1d5db', margin: '0 auto', marginBottom: '1rem' }} />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.5rem' }}>
+              <Search size={48} style={{ color: '#d1d5db', marginBottom: '0.75rem' }} />
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.5rem' }}>
                 Busque un producto para comenzar
               </h3>
-              <p style={{ color: '#9ca3af' }}>
-                Escanee un código de barras o busque por nombre
+              <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
+                Escanee un código o busque por nombre
               </p>
             </div>
           ) : productosFiltrados.length === 0 ? (
             <div style={{
               backgroundColor: 'white',
-              padding: '3rem',
+              padding: '2rem',
               borderRadius: '0.5rem',
               border: '2px solid #e5e7eb',
-              textAlign: 'center'
+              textAlign: 'center',
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
               <p style={{ color: '#6b7280' }}>No se encontraron productos</p>
             </div>
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-              gap: '1rem',
-              maxHeight: '500px',
-              overflowY: 'auto'
+              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+              gap: '0.5rem',
+              overflowY: 'auto',
+              flex: 1,
+              paddingRight: '0.5rem',
+              willChange: 'transform',
+              backfaceVisibility: 'hidden',
+              transform: 'translateZ(0)'
             }}>
-              {productosFiltrados.map(producto => {
-                const precioNormal = convertirPrecio(producto.precio_venta);
-                const precioEfectivo = calcularPrecioEfectivo(precioNormal);
-                
-                return (
-                  <div
-                    key={producto.id}
-                    style={{
-                      backgroundColor: 'white',
-                      border: '2px solid #e5e7eb',
-                      padding: '1rem',
-                      borderRadius: '0.5rem',
-                      transition: 'border-color 0.2s',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-                    onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-                  >
-                    <div style={{ marginBottom: '0.75rem' }}>
-                      <h3 style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                        {producto.nombre}
-                      </h3>
-                      <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                        {producto.categoria || 'Sin categoría'}
-                      </p>
-                      {producto.codigo_barras && (
-                        <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
-                          CB: {producto.codigo_barras}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Precios */}
-                    <div style={{ marginBottom: '0.75rem' }}>
-                      {/* Precio Normal - GRANDE */}
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <DollarSign size={20} style={{ color: '#1e40af' }} />
-                          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e40af' }}>
-                            PRECIO NORMAL
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e40af' }}>
-                          {getSimbolo()} {precioNormal.toFixed(2)}
-                        </div>
-                      </div>
-                      
-                      {/* Precio Efectivo - CHICO */}
-                      <div style={{
-                        backgroundColor: '#d1fae5',
-                        padding: '0.5rem',
-                        borderRadius: '0.375rem',
-                        border: '1px solid #86efac'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem' }}>
-                          <Banknote size={14} style={{ color: '#059669' }} />
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#059669' }}>
-                            Efectivo (8% OFF)
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#059669' }}>
-                          {getSimbolo()} {precioEfectivo.toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                        Stock: {producto.stock}
-                      </span>
-                      <button
-                        onClick={() => agregarAlCarrito(producto)}
-                        className="btn btn-primary"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
-                      >
-                        <Plus size={16} />
-                        Agregar
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              {productosFiltrados.map(producto => (
+                <ProductCard
+                  key={producto.id}
+                  producto={producto}
+                  onAgregar={agregarAlCarrito}
+                  monedaSeleccionada={monedaSeleccionada}
+                  cotizaciones={cotizaciones}
+                />
+              ))}
             </div>
           )}
         </div>
 
-        {/* Carrito */}
-        <div>
-          <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-            Carrito
-          </h2>
+        {/* Carrito - MÁS GRANDE Y COMPACTO */}
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+              Carrito
+            </h2>
+            {/* Mostrar cotizaciones */}
+            {cotizaciones.dolarPromedio && (
+              <div style={{ fontSize: '0.75rem', color: '#000000ff', textAlign: 'right' }}>
+                <div>USD: ${cotizaciones.dolarPromedio.toFixed(2)}</div>
+                <div>BRL: ${cotizaciones.realPromedio.toFixed(2)}</div>
+              </div>
+            )}
+          </div>
 
           <div style={{
             backgroundColor: 'white',
             border: '2px solid #e5e7eb',
             borderRadius: '0.5rem',
-            padding: '1rem',
-            minHeight: '400px',
+            padding: '0.75rem',
             display: 'flex',
             flexDirection: 'column',
-            position: 'sticky',
-            top: '1rem'
+            flex: 1,
+            minHeight: 0,
+            willChange: 'contents',
+            transform: 'translateZ(0)', // GPU acceleration
+            backfaceVisibility: 'hidden' // Anti-flashing
           }}>
             {carrito.length === 0 ? (
               <div style={{
@@ -431,73 +519,47 @@ const Ventas = () => {
               </div>
             ) : (
               <>
-                {/* Selectores de Moneda y Método de Pago */}
-                <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '2px solid #e5e7eb' }}>
+                {/* Selectores - MÁS COMPACTOS */}
+                <div style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '2px solid #e5e7eb' }}>
                   {/* Selector de Moneda */}
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.5rem' }}>
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.375rem' }}>
                       Moneda:
                     </label>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={() => setMonedaSeleccionada('ARS')}
-                        style={{
-                          flex: 1,
-                          padding: '0.5rem',
-                          backgroundColor: monedaSeleccionada === 'ARS' ? '#3b82f6' : '#e5e7eb',
-                          color: monedaSeleccionada === 'ARS' ? 'white' : '#374151',
-                          border: 'none',
-                          borderRadius: '0.375rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        ARS $
-                      </button>
-                      <button
-                        onClick={() => setMonedaSeleccionada('USD')}
-                        style={{
-                          flex: 1,
-                          padding: '0.5rem',
-                          backgroundColor: monedaSeleccionada === 'USD' ? '#3b82f6' : '#e5e7eb',
-                          color: monedaSeleccionada === 'USD' ? 'white' : '#374151',
-                          border: 'none',
-                          borderRadius: '0.375rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        USD
-                      </button>
-                      <button
-                        onClick={() => setMonedaSeleccionada('BRL')}
-                        style={{
-                          flex: 1,
-                          padding: '0.5rem',
-                          backgroundColor: monedaSeleccionada === 'BRL' ? '#3b82f6' : '#e5e7eb',
-                          color: monedaSeleccionada === 'BRL' ? 'white' : '#374151',
-                          border: 'none',
-                          borderRadius: '0.375rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        BRL
-                      </button>
+                    <div style={{ display: 'flex', gap: '0.375rem' }}>
+                      {['ARS', 'USD', 'BRL'].map(moneda => (
+                        <button
+                          key={moneda}
+                          onClick={() => setMonedaSeleccionada(moneda)}
+                          style={{
+                            flex: 1,
+                            padding: '0.375rem',
+                            backgroundColor: monedaSeleccionada === moneda ? '#3b82f6' : '#e5e7eb',
+                            color: monedaSeleccionada === moneda ? 'white' : '#374151',
+                            border: 'none',
+                            borderRadius: '0.375rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontSize: '0.875rem'
+                          }}
+                        >
+                          {moneda === 'ARS' ? 'ARS $' : moneda}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
                   {/* Selector de Método de Pago */}
                   <div>
-                    <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.5rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.375rem' }}>
                       Método de Pago:
                     </label>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.375rem' }}>
                       <button
                         onClick={() => setMetodoPago('normal')}
                         style={{
                           flex: 1,
-                          padding: '0.75rem',
+                          padding: '0.5rem',
                           backgroundColor: metodoPago === 'normal' ? '#3b82f6' : '#e5e7eb',
                           color: metodoPago === 'normal' ? 'white' : '#374151',
                           border: 'none',
@@ -507,17 +569,18 @@ const Ventas = () => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '0.5rem'
+                          gap: '0.375rem',
+                          fontSize: '0.875rem'
                         }}
                       >
-                        <DollarSign size={18} />
+                        <DollarSign size={16} />
                         Normal
                       </button>
                       <button
                         onClick={() => setMetodoPago('efectivo')}
                         style={{
                           flex: 1,
-                          padding: '0.75rem',
+                          padding: '0.5rem',
                           backgroundColor: metodoPago === 'efectivo' ? '#10b981' : '#e5e7eb',
                           color: metodoPago === 'efectivo' ? 'white' : '#374151',
                           border: 'none',
@@ -527,17 +590,25 @@ const Ventas = () => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '0.5rem'
+                          gap: '0.375rem',
+                          fontSize: '0.875rem'
                         }}
                       >
-                        <Banknote size={18} />
+                        <Banknote size={16} />
                         Efectivo (-8%)
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ flex: 1, marginBottom: '1rem', overflowY: 'auto', maxHeight: '300px' }}>
+                {/* Items del carrito - SCROLL INDEPENDIENTE */}
+                <div style={{ 
+                  flex: 1, 
+                  marginBottom: '0.75rem', 
+                  overflowY: 'auto',
+                  paddingRight: '0.5rem',
+                  minHeight: 0
+                }}>
                   {carrito.map(item => {
                     const precioFinal = getPrecioFinal(item.precio_unitario);
                     
@@ -546,14 +617,14 @@ const Ventas = () => {
                         key={item.producto_id}
                         style={{
                           borderBottom: '1px solid #e5e7eb',
-                          paddingBottom: '0.75rem',
-                          marginBottom: '0.75rem'
+                          paddingBottom: '0.5rem',
+                          marginBottom: '0.5rem'
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.375rem' }}>
                           <div style={{ flex: 1 }}>
                             <h4 style={{ fontWeight: 600, fontSize: '0.875rem' }}>{item.nombre}</h4>
-                            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
                               {getSimbolo()}{precioFinal.toFixed(2)} c/u
                             </div>
                           </div>
@@ -567,40 +638,42 @@ const Ventas = () => {
                               color: '#ef4444'
                             }}
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <button
                             onClick={() => modificarCantidad(item.producto_id, item.cantidad - 1)}
                             style={{
-                              padding: '0.25rem 0.75rem',
+                              padding: '0.25rem 0.625rem',
                               backgroundColor: '#e5e7eb',
                               border: 'none',
                               borderRadius: '0.375rem',
                               cursor: 'pointer',
-                              fontWeight: 'bold'
+                              fontWeight: 'bold',
+                              fontSize: '0.875rem'
                             }}
                           >
                             -
                           </button>
-                          <span style={{ fontWeight: 'bold', minWidth: '2rem', textAlign: 'center' }}>
+                          <span style={{ fontWeight: 'bold', minWidth: '1.5rem', textAlign: 'center', fontSize: '0.875rem' }}>
                             {item.cantidad}
                           </span>
                           <button
                             onClick={() => modificarCantidad(item.producto_id, item.cantidad + 1)}
                             style={{
-                              padding: '0.25rem 0.75rem',
+                              padding: '0.25rem 0.625rem',
                               backgroundColor: '#e5e7eb',
                               border: 'none',
                               borderRadius: '0.375rem',
                               cursor: 'pointer',
-                              fontWeight: 'bold'
+                              fontWeight: 'bold',
+                              fontSize: '0.875rem'
                             }}
                           >
                             +
                           </button>
-                          <span style={{ marginLeft: 'auto', fontWeight: 'bold' }}>
+                          <span style={{ marginLeft: 'auto', fontWeight: 'bold', fontSize: '0.875rem' }}>
                             {getSimbolo()}{(precioFinal * item.cantidad).toFixed(2)}
                           </span>
                         </div>
@@ -609,9 +682,10 @@ const Ventas = () => {
                   })}
                 </div>
 
+                {/* Total y finalizar - COMPACTO */}
                 <div style={{
                   backgroundColor: metodoPago === 'efectivo' ? '#d1fae5' : '#dbeafe',
-                  padding: '1rem',
+                  padding: '0.75rem',
                   borderRadius: '0.5rem',
                   border: `2px solid ${metodoPago === 'efectivo' ? '#86efac' : '#93c5fd'}`
                 }}>
@@ -619,11 +693,11 @@ const Ventas = () => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '1rem'
+                    marginBottom: '0.5rem'
                   }}>
-                    <span style={{ fontSize: '1.125rem', fontWeight: 600 }}>Total a pagar:</span>
+                    <span style={{ fontSize: '1rem', fontWeight: 600 }}>Total a pagar:</span>
                     <span style={{ 
-                      fontSize: '1.875rem', 
+                      fontSize: '1.5rem', 
                       fontWeight: 'bold', 
                       color: metodoPago === 'efectivo' ? '#059669' : '#1e40af' 
                     }}>
@@ -632,13 +706,13 @@ const Ventas = () => {
                   </div>
                   {metodoPago === 'efectivo' && (
                     <div style={{ 
-                      fontSize: '0.875rem', 
+                      fontSize: '0.75rem', 
                       color: '#059669', 
                       fontWeight: 600,
-                      marginBottom: '1rem',
+                      marginBottom: '0.5rem',
                       textAlign: 'center'
                     }}>
-                      🎉 Ahorro por pagar en efectivo: {getSimbolo()}{(totalCarrito / 0.92 * 0.08).toFixed(2)}
+                      🎉 Ahorro: {getSimbolo()}{(totalCarrito / 0.92 * 0.08).toFixed(2)}
                     </div>
                   )}
                   <button
@@ -646,8 +720,8 @@ const Ventas = () => {
                     className="btn"
                     style={{ 
                       width: '100%', 
-                      padding: '0.75rem', 
-                      fontSize: '1.125rem',
+                      padding: '0.625rem', 
+                      fontSize: '1rem',
                       backgroundColor: metodoPago === 'efectivo' ? '#10b981' : '#3b82f6',
                       color: 'white'
                     }}

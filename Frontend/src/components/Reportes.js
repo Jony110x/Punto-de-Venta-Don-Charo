@@ -307,10 +307,10 @@ const Reportes = () => {
               <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb', gridColumn: '1 / -1' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Top 10 Productos Más Vendidos</h3>
                 <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={datosProductos} layout="vertical">
+                  <BarChart data={datosProductos}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="nombre" type="category" width={150} />
+                    <XAxis dataKey="nombre" angle={-45} textAnchor="end" height={120} interval={0} style={{ fontSize: '0.75rem' }} />
+                    <YAxis />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Bar dataKey="cantidad" fill="#10b981" name="Unidades Vendidas" />
