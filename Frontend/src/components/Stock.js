@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, RefreshCw, Search, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, RefreshCw, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { getProductos, createProducto, updateProducto, deleteProducto } from '../api/api';
 import ProductoForm from './ProductoForm';
 import { useToast  } from '../Toast';
@@ -10,6 +10,7 @@ const Stock = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [productoEdit, setProductoEdit] = useState(null);
+  const [filtrosColapsados, setFiltrosColapsados] = useState(false);
    const toast = useToast();
   
   // Estados de filtros
@@ -135,126 +136,153 @@ const Stock = () => {
   }
 
   return (
-    <div style={{ padding: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>Control de Stock</h2>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={cargarProductos} className="btn" style={{ backgroundColor: '#6b7280', color: 'white' }}>
-            <RefreshCw size={18} style={{ marginRight: '0.5rem' }} />
-            Actualizar
-          </button>
-          <button onClick={() => setShowForm(true)} className="btn btn-primary">
-            <Plus size={18} style={{ marginRight: '0.5rem' }} />
-            Nuevo Producto
-          </button>
-        </div>
-      </div>
-
-      {/* Barra de búsqueda y filtros */}
+    <div style={{ 
+      padding: '0.5rem',
+      height: 'calc(100vh - 140px)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
+      
+      {/* Barra de búsqueda y filtros - FIJA Y COLAPSABLE */}
       <div style={{
         backgroundColor: 'white',
-        padding: '1.5rem',
+        padding: filtrosColapsados ? '0.75rem' : '1rem', 
         borderRadius: '0.5rem',
         border: '2px solid #e5e7eb',
-        marginBottom: '1.5rem'
+        marginBottom: '0.5rem', 
+        flexShrink: 0,
+        transition: 'padding 0.3s ease'
       }}>
-        {/* <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <Filter size={20} style={{ color: '#3b82f6' }} />
-          <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#374151' }}>
-            Filtros de Búsqueda
-          </h3>
-        </div> */}
-
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem' }}>
-          {/* Búsqueda por texto */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
-              Buscar por nombre, categoría o código
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Search size={20} style={{
-                position: 'absolute',
-                left: '0.75rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af'
-              }} />
-              <input
-                type="text"
-                placeholder="Escriba para buscar..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="input"
-                style={{ paddingLeft: '2.5rem' }}
-              />
-            </div>
-          </div>
-
-          {/* Filtro por categoría */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
-              Categoría
-            </label>
-            <select
-              value={filtroCategoria}
-              onChange={(e) => setFiltroCategoria(e.target.value)}
-              className="input"
-              style={{ textTransform: 'capitalize' }}
-            >
-              {categorias.map(cat => (
-                <option key={cat} value={cat}>
-                  {cat === 'todas' ? 'Todas las categorías' : cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filtro por estado */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
-              Estado de Stock
-            </label>
-            <select
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-              className="input"
-            >
-              <option value="todos">Todos los estados</option>
-              <option value="normal">Normal</option>
-              <option value="bajo">Bajo</option>
-              <option value="crítico">Crítico</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Botón limpiar filtros y contador */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-            Mostrando <strong>{productosFiltrados.length}</strong> de <strong>{productos.length}</strong> productos
-          </div>
-          {(busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') && (
-            <button
-              onClick={limpiarFiltros}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: filtrosColapsados ? 0 : '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>Control de Stock</h2>
+            <button 
+              onClick={() => setFiltrosColapsados(!filtrosColapsados)}
               className="btn"
               style={{ 
                 backgroundColor: '#f3f4f6', 
                 color: '#374151',
+                padding: '0.375rem 0.75rem',
                 fontSize: '0.875rem',
-                padding: '0.5rem 1rem'
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
               }}
+              title={filtrosColapsados ? 'Mostrar filtros' : 'Ocultar filtros'}
             >
-              Limpiar filtros
+              {filtrosColapsados ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+              {filtrosColapsados ? 'Mostrar filtros' : 'Ocultar filtros'}
             </button>
-          )}
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={cargarProductos} className="btn" style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 0.75rem' }}>
+              <RefreshCw size={16} style={{ marginRight: '0.5rem' }} />
+              Actualizar
+            </button>
+            <button onClick={() => setShowForm(true)} className="btn btn-primary" style={{ padding: '0.5rem 0.75rem' }}>
+              <Plus size={16} style={{ marginRight: '0.5rem' }} />
+              Nuevo Producto
+            </button>
+          </div>
         </div>
+
+        {/* Filtros colapsables */}
+        {!filtrosColapsados && (
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '0.75rem', alignItems: 'end' }}>
+            {/* Búsqueda por texto */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
+                Buscar por nombre o categoría
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Search size={18} style={{
+                  position: 'absolute',
+                  left: '0.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#9ca3af'
+                }} />
+                <input
+                  type="text"
+                  placeholder="Escriba para buscar..."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="input"
+                  style={{ paddingLeft: '2.5rem', padding: '0.5rem 0.5rem 0.5rem 2.5rem' }}
+                />
+              </div>
+            </div>
+
+            {/* Filtro por categoría */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
+                Categoría
+              </label>
+              <select
+                value={filtroCategoria}
+                onChange={(e) => setFiltroCategoria(e.target.value)}
+                className="input"
+                style={{ textTransform: 'capitalize', padding: '0.5rem' }}
+              >
+                {categorias.map(cat => (
+                  <option key={cat} value={cat}>
+                    {cat === 'todas' ? 'Todas las categorías' : cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por estado */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
+                Estado de Stock
+              </label>
+              <select
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                className="input"
+                style={{ padding: '0.5rem' }}
+              >
+                <option value="todos">Todos</option>
+                <option value="normal">Normal</option>
+                <option value="bajo">Bajo</option>
+                <option value="crítico">Crítico</option>
+              </select>
+            </div>
+
+            {/* Botón limpiar filtros - SIEMPRE VISIBLE */}
+            <div>
+              <button
+                onClick={limpiarFiltros}
+                disabled={!busqueda && filtroCategoria === 'todas' && filtroEstado === 'todos'}
+                className="btn"
+                style={{ 
+                  backgroundColor: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? '#ef4444' : '#e5e7eb',
+                  color: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? 'white' : '#9ca3af',
+                  fontSize: '0.75rem',
+                  padding: '0.5rem 0.75rem',
+                  cursor: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? 'pointer' : 'not-allowed',
+                  opacity: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? 1 : 0.6,
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Tabla de productos */}
+      {/* Tabla de productos - CON SCROLL */}
       <div style={{
         backgroundColor: 'white',
         borderRadius: '0.5rem',
         border: '2px solid #e5e7eb',
-        overflow: 'auto'
+        flex: 1,
+        overflow: 'auto',
+        minHeight: 0
       }}>
         {productosFiltrados.length === 0 ? (
           <div style={{ 
@@ -272,16 +300,21 @@ const Stock = () => {
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
-            <thead style={{ backgroundColor: '#f3f4f6' }}>
+            <thead style={{ 
+              backgroundColor: '#f3f4f6',
+              position: 'sticky',
+              top: 0,
+              zIndex: 10
+            }}>
               <tr>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 'bold' }}>Producto</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 'bold' }}>Categoría</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 'bold' }}>P. Costo</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 'bold' }}>P. Venta</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 'bold' }}>Margen</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 'bold' }}>Stock</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 'bold' }}>Estado</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 'bold' }}>Acciones</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem' }}>Producto</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem' }}>Categoría</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem' }}>P. Costo</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem' }}>P. Venta</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem' }}>Margen</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem' }}>Stock</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem' }}>Estado</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -293,59 +326,59 @@ const Stock = () => {
                 
                 return (
                   <tr key={producto.id} style={{ borderTop: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '0.75rem' }}>
                       <div>
-                        <div style={{ fontWeight: 600 }}>{producto.nombre}</div>
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{producto.nombre}</div>
                         {producto.codigo_barras && (
-                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>
                             CB: {producto.codigo_barras}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: '1rem', textTransform: 'capitalize' }}>
+                    <td style={{ padding: '0.75rem', textTransform: 'capitalize', fontSize: '0.875rem' }}>
                       {producto.categoria || 'Sin categoría'}
                     </td>
-                    <td style={{ padding: '1rem', color: '#dc2626', fontWeight: 600 }}>
+                    <td style={{ padding: '0.75rem', color: '#dc2626', fontWeight: 600, fontSize: '0.875rem' }}>
                       ${producto.precio_costo.toFixed(2)}
                     </td>
-                    <td style={{ padding: '1rem', color: '#059669', fontWeight: 'bold' }}>
+                    <td style={{ padding: '0.75rem', color: '#059669', fontWeight: 'bold', fontSize: '0.875rem' }}>
                       ${producto.precio_venta.toFixed(2)}
                     </td>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '0.75rem' }}>
                       <span style={{
                         backgroundColor: margen > 30 ? '#d1fae5' : margen > 15 ? '#fef3c7' : '#fee2e2',
                         color: margen > 30 ? '#065f46' : margen > 15 ? '#92400e' : '#991b1b',
                         padding: '0.25rem 0.5rem',
                         borderRadius: '0.25rem',
-                        fontSize: '0.875rem',
+                        fontSize: '0.8125rem',
                         fontWeight: 600
                       }}>
                         {margen}%
                       </span>
                     </td>
-                    <td style={{ padding: '1rem', fontWeight: 'bold' }}>{producto.stock}</td>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '0.75rem', fontWeight: 'bold', fontSize: '0.875rem' }}>{producto.stock}</td>
+                    <td style={{ padding: '0.75rem' }}>
                       <span style={{
                         backgroundColor: estado.color,
                         color: estado.textColor,
                         padding: '0.25rem 0.75rem',
                         borderRadius: '9999px',
-                        fontSize: '0.875rem',
+                        fontSize: '0.8125rem',
                         fontWeight: 600
                       }}>
                         {estado.text}
                       </span>
                     </td>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <td style={{ padding: '0.75rem' }}>
+                      <div style={{ display: 'flex', gap: '0.375rem' }}>
                         <button
                           onClick={() => {
                             setProductoEdit(producto);
                             setShowForm(true);
                           }}
                           style={{
-                            padding: '0.5rem',
+                            padding: '0.375rem',
                             backgroundColor: '#3b82f6',
                             color: 'white',
                             border: 'none',
@@ -354,12 +387,12 @@ const Stock = () => {
                           }}
                           title="Editar producto"
                         >
-                          <Edit2 size={16} />
+                          <Edit2 size={14} />
                         </button>
                         <button
                           onClick={() => handleEliminarProducto(producto.id)}
                           style={{
-                            padding: '0.5rem',
+                            padding: '0.375rem',
                             backgroundColor: '#ef4444',
                             color: 'white',
                             border: 'none',
@@ -368,7 +401,7 @@ const Stock = () => {
                           }}
                           title="Eliminar producto"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>

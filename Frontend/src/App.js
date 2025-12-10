@@ -266,7 +266,7 @@ function App() {
         style={{
           background: "linear-gradient(to right, #2563eb, #1e40af)",
           color: "white",
-          padding: "1.5rem",
+          padding: "0.8rem",
           boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
         }}
       >
@@ -363,7 +363,7 @@ function App() {
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
-                    padding: "1rem 1.5rem",
+                    padding: "0.8rem 1.5rem",
                     fontWeight: 600,
                     border: "none",
                     backgroundColor: activo ? "#eff6ff" : "transparent",
