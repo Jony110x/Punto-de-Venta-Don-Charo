@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, DollarSign, ShoppingCart, Package, Clock, RefreshCw } from 'lucide-react';
 import { getDashboard, getVentasPorPeriodo, getCategoriasVendidas, getProductosVendidos, getVentasPorHorario, getVentasPorHorarioFecha, getGanancias, getMetodosPago } from '../api/api';
-import { useToast  } from '../Toast';
+import { useToast } from '../Toast';
 
 // Tooltip personalizado para mostrar valores correctamente
 const CustomTooltip = ({ active, payload, label }) => {
@@ -29,16 +29,43 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+// Componente Skeleton para gráficos
+const ChartSkeleton = ({ height = 180 }) => (
+  <div style={{ 
+    width: '100%', 
+    height: `${height}px`,
+    backgroundColor: '#f3f4f6',
+    borderRadius: '0.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    animation: 'pulse 1.5s ease-in-out infinite'
+  }}>
+    <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+      <div style={{ 
+        width: '60px', 
+        height: '60px', 
+        margin: '0 auto',
+        backgroundColor: '#e5e7eb',
+        borderRadius: '0.5rem',
+        marginBottom: '0.5rem',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      <p style={{ fontSize: '0.75rem' }}>Cargando datos...</p>
+    </div>
+  </div>
+);
+
 const Reportes = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [vistaActual, setVistaActual] = useState('ventas');
   const [periodoVentas, setPeriodoVentas] = useState('dia');
   const [periodoGanancias, setPeriodoGanancias] = useState('mes');
-  const [graficoVentas, setGraficoVentas] = useState('cantidad'); // 'cantidad', 'total', 'ganancia'
-  const [fechaHorario, setFechaHorario] = useState(''); // Fecha seleccionada para gráfico de horarios
+  const [graficoVentas, setGraficoVentas] = useState('cantidad');
+  const [fechaHorario, setFechaHorario] = useState('');
   
   const [datosVentas, setDatosVentas] = useState([]);
-  const [datosVentasGanancia, setDatosVentasGanancia] = useState([]); // Nuevo: para ganancias por periodo
+  const [datosVentasGanancia, setDatosVentasGanancia] = useState([]);
   const [datosCategorias, setDatosCategorias] = useState([]);
   const [datosProductos, setDatosProductos] = useState([]);
   const [datosHorarios, setDatosHorarios] = useState([]);
@@ -48,7 +75,6 @@ const Reportes = () => {
   const toast = useToast();
 
   useEffect(() => {
-    // Inicializar con la fecha de hoy
     const hoy = new Date().toISOString().split('T')[0];
     setFechaHorario(hoy);
     cargarDatos();
@@ -60,14 +86,13 @@ const Reportes = () => {
       const dashRes = await getDashboard();
       setDashboard(dashRes.data);
 
-      // Cargar TODOS los datos para el dashboard
       const [ventasRes, ganVentasRes, catRes, prodRes, metRes, horRes, ganRes] = await Promise.all([
         getVentasPorPeriodo(periodoVentas),
         getGanancias(periodoVentas),
         getCategoriasVendidas(10),
         getProductosVendidos(10),
         getMetodosPago(),
-        getVentasPorHorarioFecha(fechaHorario), // Usar fecha seleccionada
+        getVentasPorHorarioFecha(fechaHorario),
         getGanancias(periodoGanancias)
       ]);
 
@@ -80,13 +105,12 @@ const Reportes = () => {
       setDatosGanancias(ganRes.data);
     } catch (error) {
       console.error('Error cargando reportes:', error);
-      toast.error('Error al cargar los datos de reportes')
+      toast.error('Error al cargar los datos de reportes');
     } finally {
       setLoading(false);
     }
   };
 
-  // Función para cargar solo datos de horarios cuando cambia la fecha
   const cargarDatosHorarios = async (nuevaFecha) => {
     try {
       const horRes = await getVentasPorHorarioFecha(nuevaFecha);
@@ -99,10 +123,6 @@ const Reportes = () => {
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
-  if (!dashboard) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><p>Cargando reportes...</p></div>;
-  }
-
   return (
     <div style={{ 
       padding: '0.75rem',
@@ -111,7 +131,21 @@ const Reportes = () => {
       flexDirection: 'column',
       overflow: 'hidden'
     }}>
-      {/* Header - FIJO */}
+      {/* Agregar estilos de animación pulse */}
+      <style>
+        {`
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
+          }
+        `}
+      </style>
+
+      {/* Header - FIJO - SIEMPRE VISIBLE */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -158,25 +192,23 @@ const Reportes = () => {
         </div>
       </div>
 
-      {/* Grid de gráficos - CON SCROLL */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: '0.5rem' }}>
-          <p>Cargando datos...</p>
-        </div>
-      ) : (
-        <div style={{ 
-          flex: 1, 
-          overflowY: 'auto', 
-          minHeight: 0,
-          paddingRight: '0.5rem'
-        }}>
-          {/* Fila 1: Ventas (3 columnas) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            {/* Cantidad de Ventas */}
-            <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#000000ff' }}>
-                📦 Cantidad de Ventas
-              </h3>
+      {/* Grid de gráficos - CON SCROLL Y SKELETON */}
+      <div style={{ 
+        flex: 1, 
+        overflowY: 'auto', 
+        minHeight: 0,
+        paddingRight: '0.5rem'
+      }}>
+        {/* Fila 1: Ventas (3 columnas) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          {/* Cantidad de Ventas */}
+          <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#000000ff' }}>
+              📦 Cantidad de Ventas
+            </h3>
+            {loading ? (
+              <ChartSkeleton />
+            ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={datosVentas}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -192,13 +224,17 @@ const Reportes = () => {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            )}
+          </div>
 
-            {/* Total en Ventas */}
-            <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#010705ff' }}>
-                💰 Total en Ventas
-              </h3>
+          {/* Total en Ventas */}
+          <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#010705ff' }}>
+              💰 Total en Ventas
+            </h3>
+            {loading ? (
+              <ChartSkeleton />
+            ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={datosVentas}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -214,13 +250,17 @@ const Reportes = () => {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            )}
+          </div>
 
-            {/* Ganancias */}
-            <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#000000ff' }}>
-                📈 Ganancias
-              </h3>
+          {/* Ganancias */}
+          <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#000000ff' }}>
+              📈 Ganancias
+            </h3>
+            {loading ? (
+              <ChartSkeleton />
+            ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={datosVentasGanancia}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -236,16 +276,20 @@ const Reportes = () => {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            )}
           </div>
+        </div>
 
-          {/* Fila 2: Categorías, Métodos Pago, Horarios */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            {/* Categorías */}
-            <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                📊 Top 10 Categorías
-              </h3>
+        {/* Fila 2: Categorías, Métodos Pago, Horarios */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          {/* Categorías */}
+          <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+              📊 Top 10 Categorías
+            </h3>
+            {loading ? (
+              <ChartSkeleton />
+            ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={datosCategorias.slice(0, 10)}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -255,13 +299,17 @@ const Reportes = () => {
                   <Bar dataKey="cantidad" fill="#3b82f6" />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            )}
+          </div>
 
-            {/* Métodos de Pago */}
-            <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                💳 Métodos de Pago
-              </h3>
+          {/* Métodos de Pago */}
+          <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+              💳 Métodos de Pago
+            </h3>
+            {loading ? (
+              <ChartSkeleton />
+            ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
                   <Pie
@@ -291,30 +339,34 @@ const Reportes = () => {
                   />
                 </PieChart>
               </ResponsiveContainer>
-            </div>
+            )}
+          </div>
 
-            {/* Horarios */}
-            <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 'bold' }}>
-                  🕐 Ventas por Horario
-                </h3>
-                <input
-                  type="date"
-                  value={fechaHorario}
-                  onChange={(e) => {
-                    setFechaHorario(e.target.value);
-                    cargarDatosHorarios(e.target.value);
-                  }}
-                  style={{
-                    padding: '0.25rem 0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem',
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
-                  }}
-                />
-              </div>
+          {/* Horarios */}
+          <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                🕐 Ventas por Horario
+              </h3>
+              <input
+                type="date"
+                value={fechaHorario}
+                onChange={(e) => {
+                  setFechaHorario(e.target.value);
+                  cargarDatosHorarios(e.target.value);
+                }}
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+            {loading ? (
+              <ChartSkeleton />
+            ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={datosHorarios}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -324,14 +376,18 @@ const Reportes = () => {
                   <Bar dataKey="cantidad" fill="#8b5cf6" name="Cantidad" />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            )}
           </div>
+        </div>
 
-          {/* Fila 3: Top Productos (ancho completo) */}
-          <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-              🏆 Top 10 Productos Más Vendidos
-            </h3>
+        {/* Fila 3: Top Productos (ancho completo) */}
+        <div style={{ backgroundColor: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '2px solid #e5e7eb' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            🏆 Top 10 Productos Más Vendidos
+          </h3>
+          {loading ? (
+            <ChartSkeleton height={220} />
+          ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={datosProductos}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -341,9 +397,9 @@ const Reportes = () => {
                 <Bar dataKey="cantidad" fill="#87408dff" />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

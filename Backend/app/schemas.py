@@ -131,3 +131,14 @@ class MovimientoFinanciero(BaseModel):
     
     class Config:
         from_attributes = True
+
+class ProductosPaginados(BaseModel):
+    """Schema para respuesta paginada de productos"""
+    productos: List[Producto]
+    total: int
+    skip: int
+    limit: int
+    has_more: bool
+    
+    class Config:
+        from_attributes = True

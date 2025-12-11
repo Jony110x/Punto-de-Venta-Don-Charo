@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Search, ShoppingCart, Trash2, Scan, DollarSign, Banknote } from 'lucide-react';
 import { getProductos, createVenta, buscarPorCodigo, getCotizaciones } from '../api/api';
-import { useToast  } from '../Toast';
+import { useToast } from '../Toast';
 
-// Componente memoizado con props mínimas
+// Componente de tarjeta de producto memoizado
 const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotizaciones }) => {
   const convertirPrecio = (precioARS) => {
     if (monedaSeleccionada === 'USD') return precioARS * cotizaciones.USD;
@@ -29,10 +29,7 @@ const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotiz
         borderRadius: '0.375rem',
         transition: 'border-color 0.2s',
         cursor: 'pointer',
-        height: 'fit-content',
-        willChange: 'border-color',
-        transform: 'translateZ(0)',
-        backfaceVisibility: 'hidden'
+        height: 'fit-content'
       }}
       onMouseEnter={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
       onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
@@ -110,37 +107,88 @@ const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotiz
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Comparación manual: solo re-renderizar si cambian producto, moneda o cotizaciones
-  return prevProps.producto.id === nextProps.producto.id &&
-         prevProps.monedaSeleccionada === nextProps.monedaSeleccionada &&
-         prevProps.cotizaciones.USD === nextProps.cotizaciones.USD &&
-         prevProps.cotizaciones.BRL === nextProps.cotizaciones.BRL;
+  // Solo re-renderizar si cambian props relevantes
+  return (
+    prevProps.producto.id === nextProps.producto.id &&
+    prevProps.producto.stock === nextProps.producto.stock &&
+    prevProps.monedaSeleccionada === nextProps.monedaSeleccionada &&
+    prevProps.cotizaciones.USD === nextProps.cotizaciones.USD &&
+    prevProps.cotizaciones.BRL === nextProps.cotizaciones.BRL
+  );
 });
+
+// Skeleton para productos
+const ProductCardSkeleton = () => (
+  <div style={{
+    backgroundColor: '#f3f4f6',
+    border: '2px solid #e5e7eb',
+    padding: '0.5rem',
+    borderRadius: '0.375rem',
+    height: 'fit-content'
+  }}>
+    <div style={{ marginBottom: '0.375rem' }}>
+      <div style={{ 
+        height: '1rem', 
+        backgroundColor: '#e5e7eb', 
+        borderRadius: '0.25rem',
+        marginBottom: '0.375rem',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      <div style={{ 
+        height: '0.75rem', 
+        backgroundColor: '#e5e7eb', 
+        borderRadius: '0.25rem',
+        width: '60%',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+    </div>
+    <div style={{ 
+      height: '3rem', 
+      backgroundColor: '#e5e7eb', 
+      borderRadius: '0.25rem',
+      marginBottom: '0.375rem',
+      animation: 'pulse 1.5s ease-in-out infinite'
+    }} />
+    <div style={{ 
+      height: '1.5rem', 
+      backgroundColor: '#e5e7eb', 
+      borderRadius: '0.25rem',
+      animation: 'pulse 1.5s ease-in-out infinite'
+    }} />
+  </div>
+);
 
 const Ventas = () => {
   const [productos, setProductos] = useState([]);
   const [carrito, setCarrito] = useState([]);
   const [busqueda, setBusqueda] = useState('');
   const [codigoBarras, setCodigoBarras] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [buscandoCodigo, setBuscandoCodigo] = useState(false);
   const [monedaSeleccionada, setMonedaSeleccionada] = useState('ARS');
-  const [metodoPago, setMetodoPago] = useState('normal'); // 'normal' o 'efectivo'
+  const [metodoPago, setMetodoPago] = useState('normal');
   const [cotizaciones, setCotizaciones] = useState({ USD: 1, BRL: 1 });
+  
+  // Estados de paginación
+  const [skip, setSkip] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
+  const LIMIT = 50;
+  
   const codigoInputRef = useRef(null);
+  const gridRef = useRef(null);
+  const observerRef = useRef(null);
   const toast = useToast();
 
   useEffect(() => {
-    cargarProductos();
     cargarCotizaciones();
     if (codigoInputRef.current) {
       codigoInputRef.current.focus();
     }
 
-    // Listener para Enter que finaliza venta cuando hay items en carrito
     const handleGlobalKeyPress = (e) => {
       if (e.key === 'Enter' && carrito.length > 0) {
-        // Solo finalizar si NO estamos en el input de código de barras
         if (document.activeElement !== codigoInputRef.current) {
           e.preventDefault();
           finalizarVenta();
@@ -152,6 +200,19 @@ const Ventas = () => {
     return () => document.removeEventListener('keypress', handleGlobalKeyPress);
   }, [carrito]);
 
+  // Cargar productos cuando cambia la búsqueda
+  useEffect(() => {
+    if (busqueda.length > 0) {
+      setProductos([]);
+      setSkip(0);
+      setHasMore(true);
+      cargarProductos(0, true);
+    } else {
+      setProductos([]);
+      setTotal(0);
+    }
+  }, [busqueda]);
+
   const cargarCotizaciones = async () => {
     try {
       const rates = await getCotizaciones();
@@ -161,18 +222,61 @@ const Ventas = () => {
     }
   };
 
-  const cargarProductos = async () => {
+  const cargarProductos = async (skipValue = skip, reset = false) => {
+    if (!hasMore && !reset) return;
+    if (!busqueda && !reset) return; // Solo cargar si hay búsqueda
+    
     try {
-      setLoading(true);
-      const response = await getProductos();
-      setProductos(response.data.filter(p => p.stock > 0));
+      if (reset) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const params = {
+        skip: skipValue,
+        limit: LIMIT,
+        ...(busqueda && { busqueda })
+      };
+
+      const response = await getProductos(params);
+      const { productos: nuevosProductos, total: totalProductos, has_more } = response.data;
+
+      // Filtrar solo productos con stock
+      const productosConStock = nuevosProductos.filter(p => p.stock > 0);
+
+      if (reset) {
+        setProductos(productosConStock);
+      } else {
+        setProductos(prev => [...prev, ...productosConStock]);
+      }
+      
+      setTotal(totalProductos);
+      setHasMore(has_more);
+      setSkip(skipValue + LIMIT);
+
     } catch (error) {
       console.error('Error cargando productos:', error);
-      toast.error('Error al cargar prodoctos')
+      toast.error('Error al cargar productos');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
+
+  // Intersection Observer para scroll infinito
+  const lastProductRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observerRef.current) observerRef.current.disconnect();
+    
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && busqueda.length > 0) {
+        cargarProductos();
+      }
+    });
+    
+    if (node) observerRef.current.observe(node);
+  }, [loading, loadingMore, hasMore, skip, busqueda]);
 
   const convertirPrecio = (precioARS) => {
     if (monedaSeleccionada === 'USD') {
@@ -184,7 +288,7 @@ const Ventas = () => {
   };
 
   const calcularPrecioEfectivo = (precio) => {
-    return precio * 0.92; // 8% de descuento
+    return precio * 0.92;
   };
 
   const getSimbolo = () => {
@@ -220,7 +324,7 @@ const Ventas = () => {
       }
     } catch (error) {
       console.error('Error buscando producto:', error);
-      toast.error('Producto no encontrado')
+      toast.error('Producto no encontrado');
       setCodigoBarras('');
       if (codigoInputRef.current) {
         codigoInputRef.current.focus();
@@ -237,26 +341,23 @@ const Ventas = () => {
     }
   };
 
-  const productosFiltrados = productos.filter(p =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (p.categoria && p.categoria.toLowerCase().includes(busqueda.toLowerCase()))
-  );
-
   const agregarAlCarrito = useCallback((producto) => {
     setCarrito(prevCarrito => {
       const itemExistente = prevCarrito.find(item => item.producto_id === producto.id);
       
       if (itemExistente) {
         if (itemExistente.cantidad >= producto.stock) {
-          toast.warning('No hay suficiente stock')
+          toast.warning('No hay suficiente stock');
           return prevCarrito;
         }
+        // Actualización inmediata sin rerender innecesario
         return prevCarrito.map(item =>
           item.producto_id === producto.id
             ? { ...item, cantidad: item.cantidad + 1 }
             : item
         );
       } else {
+        // Agregar nuevo item
         return [...prevCarrito, {
           producto_id: producto.id,
           nombre: producto.nombre,
@@ -266,34 +367,39 @@ const Ventas = () => {
         }];
       }
     });
-  }, []);
+  }, []); // Sin dependencias para evitar recreaciones
 
-  const modificarCantidad = (producto_id, nuevaCantidad) => {
+  const modificarCantidad = useCallback((producto_id, nuevaCantidad) => {
     if (nuevaCantidad <= 0) {
       eliminarDelCarrito(producto_id);
       return;
     }
 
-    const item = carrito.find(i => i.producto_id === producto_id);
-    if (nuevaCantidad > item.stock_disponible) {
-      toast.warning('No hay suficiente stock')
-      return;
-    }
+    setCarrito(prevCarrito => {
+      const item = prevCarrito.find(i => i.producto_id === producto_id);
+      if (!item) return prevCarrito;
+      
+      if (nuevaCantidad > item.stock_disponible) {
+        toast.warning('No hay suficiente stock');
+        return prevCarrito;
+      }
 
-    setCarrito(carrito.map(item =>
-      item.producto_id === producto_id
-        ? { ...item, cantidad: nuevaCantidad }
-        : item
-    ));
-  };
+      // Actualización directa y rápida
+      return prevCarrito.map(item =>
+        item.producto_id === producto_id
+          ? { ...item, cantidad: nuevaCantidad }
+          : item
+      );
+    });
+  }, []);
 
-  const eliminarDelCarrito = (producto_id) => {
-    setCarrito(carrito.filter(item => item.producto_id !== producto_id));
-  };
+  const eliminarDelCarrito = useCallback((producto_id) => {
+    setCarrito(prevCarrito => prevCarrito.filter(item => item.producto_id !== producto_id));
+  }, []);
 
   const finalizarVenta = async () => {
     if (carrito.length === 0) {
-      toast.warning('El carrito esta vacio')
+      toast.warning('El carrito está vacío');
       return;
     }
 
@@ -308,57 +414,75 @@ const Ventas = () => {
       };
 
       await createVenta(ventaData);
-      toast.success('Venta registrada exitosamente!')
+      toast.success('Venta registrada exitosamente!');
       setCarrito([]);
-      cargarProductos();
+      
+      // Recargar productos si hay búsqueda activa
+      if (busqueda.length > 0) {
+        setProductos([]);
+        setSkip(0);
+        setHasMore(true);
+        cargarProductos(0, true);
+      }
       
       if (codigoInputRef.current) {
         codigoInputRef.current.focus();
       }
     } catch (error) {
       console.error('Error creando venta:', error);
-      toast.error('Error al registrar la venta')
+      toast.error('Error al registrar la venta');
     }
   };
 
   const totalCarrito = carrito.reduce((sum, item) => sum + (getPrecioFinal(item.precio_unitario) * item.cantidad), 0);
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-        <p>Cargando productos...</p>
-      </div>
-    );
-  }
-
-  // Solo mostrar productos si hay búsqueda
-  const mostrarProductos = busqueda.length > 0 || codigoBarras.length > 0;
+  const mostrarProductos = busqueda.length > 0;
 
   return (
     <div style={{ 
       padding: '1rem',
-      height: 'calc(100vh - 70px)', // Altura total menos header
+      height: 'calc(100vh - 140px)', // Ajustado para dejar espacio al header
       overflow: 'hidden'
     }}>
+      {/* Agregar estilos de animación pulse */}
+      <style>
+        {`
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
+          }
+        `}
+      </style>
+
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', // 50/50
+        gridTemplateColumns: '1fr 1fr',
         gap: '1rem',
         height: '100%'
       }}>
         {/* Panel de búsqueda */}
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.75rem' }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          minHeight: 0,
+          height: '100%' // Forzar altura completa
+        }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.75rem', flexShrink: 0 }}>
             Nueva Venta
           </h2>
 
-          {/* Lector de Código de Barras - MÁS COMPACTO */}
+          {/* Lector de Código de Barras */}
           <div style={{
             backgroundColor: '#dbeafe',
             padding: '0.75rem',
             borderRadius: '0.5rem',
             border: '2px solid #3b82f6',
-            marginBottom: '0.75rem'
+            marginBottom: '0.75rem',
+            flexShrink: 0
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <Scan size={20} style={{ color: '#1e40af' }} />
@@ -394,13 +518,14 @@ const Ventas = () => {
             </div>
           </div>
 
-          {/* Búsqueda manual - MÁS COMPACTA */}
+          {/* Búsqueda manual */}
           <div style={{
             backgroundColor: 'white',
             padding: '0.75rem',
             borderRadius: '0.5rem',
             border: '2px solid #e5e7eb',
-            marginBottom: '0.75rem'
+            marginBottom: '0.75rem',
+            flexShrink: 0
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Search size={18} style={{ color: '#6b7280' }} />
@@ -410,79 +535,126 @@ const Ventas = () => {
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 className="input"
-                style={{ border: 'none', outline: 'none', padding: '0.25rem' }}
+                style={{ border: 'none', outline: 'none', padding: '0.25rem', flex: 1 }}
               />
             </div>
           </div>
 
-          {/* Productos - SCROLL INDIVIDUAL */}
-          {!mostrarProductos ? (
-            <div style={{
-              backgroundColor: 'white',
-              padding: '2rem',
-              borderRadius: '0.5rem',
-              border: '2px solid #e5e7eb',
-              textAlign: 'center',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Search size={48} style={{ color: '#d1d5db', marginBottom: '0.75rem' }} />
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.5rem' }}>
-                Busque un producto para comenzar
-              </h3>
-              <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
-                Escanee un código o busque por nombre
-              </p>
-            </div>
-          ) : productosFiltrados.length === 0 ? (
-            <div style={{
-              backgroundColor: 'white',
-              padding: '2rem',
-              borderRadius: '0.5rem',
-              border: '2px solid #e5e7eb',
-              textAlign: 'center',
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <p style={{ color: '#6b7280' }}>No se encontraron productos</p>
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-              gap: '0.5rem',
-              overflowY: 'auto',
-              flex: 1,
-              paddingRight: '0.5rem',
-              willChange: 'transform',
-              backfaceVisibility: 'hidden',
-              transform: 'translateZ(0)'
-            }}>
-              {productosFiltrados.map(producto => (
-                <ProductCard
-                  key={producto.id}
-                  producto={producto}
-                  onAgregar={agregarAlCarrito}
-                  monedaSeleccionada={monedaSeleccionada}
-                  cotizaciones={cotizaciones}
-                />
-              ))}
-            </div>
-          )}
+          {/* Productos con scroll infinito - ALTURA LIMITADA */}
+          <div style={{ 
+            flex: 1, 
+            minHeight: 0,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {!mostrarProductos ? (
+              <div style={{
+                backgroundColor: 'white',
+                padding: '2rem',
+                borderRadius: '0.5rem',
+                border: '2px solid #e5e7eb',
+                textAlign: 'center',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Search size={48} style={{ color: '#d1d5db', marginBottom: '0.75rem' }} />
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.5rem' }}>
+                  Busque un producto para comenzar
+                </h3>
+                <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
+                  Escanee un código o busque por nombre
+                </p>
+              </div>
+            ) : productos.length === 0 && !loading ? (
+              <div style={{
+                backgroundColor: 'white',
+                padding: '2rem',
+                borderRadius: '0.5rem',
+                border: '2px solid #e5e7eb',
+                textAlign: 'center',
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <p style={{ color: '#6b7280' }}>No se encontraron productos</p>
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                gap: '0.5rem',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                height: '100%', // IMPORTANTE: Altura fija
+                paddingRight: '0.5rem',
+                // Optimización de scroll
+                willChange: 'transform',
+                contain: 'layout style paint'
+              }}>
+                {loading && productos.length === 0 ? (
+                  <>
+                    {[...Array(10)].map((_, index) => (
+                      <ProductCardSkeleton key={`skeleton-${index}`} />
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {productos.map((producto, index) => {
+                      const isLast = index === productos.length - 1;
+                      return (
+                        <div key={producto.id} ref={isLast ? lastProductRef : null}>
+                          <ProductCard
+                            producto={producto}
+                            onAgregar={agregarAlCarrito}
+                            monedaSeleccionada={monedaSeleccionada}
+                            cotizaciones={cotizaciones}
+                          />
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Indicador de carga al final */}
+                    {loadingMore && (
+                      <div style={{ 
+                        gridColumn: '1 / -1',
+                        padding: '1rem', 
+                        textAlign: 'center',
+                        color: '#6b7280'
+                      }}>
+                        <p>Cargando más productos...</p>
+                      </div>
+                    )}
+                    
+                    {/* Mensaje cuando no hay más productos */}
+                    {!hasMore && productos.length > 0 && (
+                      <div style={{ 
+                        gridColumn: '1 / -1',
+                        padding: '1rem', 
+                        textAlign: 'center',
+                        color: '#6b7280',
+                        fontSize: '0.875rem'
+                      }}>
+                        <p>✓ Todos los productos cargados ({total} total)</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Carrito - MÁS GRANDE Y COMPACTO */}
+        {/* Carrito */}
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
               Carrito
             </h2>
-            {/* Mostrar cotizaciones */}
             {cotizaciones.dolarPromedio && (
               <div style={{ fontSize: '0.75rem', color: '#000000ff', textAlign: 'right' }}>
                 <div>USD: ${cotizaciones.dolarPromedio.toFixed(2)}</div>
@@ -499,10 +671,7 @@ const Ventas = () => {
             display: 'flex',
             flexDirection: 'column',
             flex: 1,
-            minHeight: 0,
-            willChange: 'contents',
-            transform: 'translateZ(0)', // GPU acceleration
-            backfaceVisibility: 'hidden' // Anti-flashing
+            minHeight: 0
           }}>
             {carrito.length === 0 ? (
               <div style={{
@@ -521,7 +690,7 @@ const Ventas = () => {
               </div>
             ) : (
               <>
-                {/* Selectores - MÁS COMPACTOS */}
+                {/* Selectores */}
                 <div style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '2px solid #e5e7eb' }}>
                   {/* Selector de Moneda */}
                   <div style={{ marginBottom: '0.75rem' }}>
@@ -603,7 +772,7 @@ const Ventas = () => {
                   </div>
                 </div>
 
-                {/* Items del carrito - SCROLL INDEPENDIENTE */}
+                {/* Items del carrito */}
                 <div style={{ 
                   flex: 1, 
                   marginBottom: '0.75rem', 
@@ -684,7 +853,7 @@ const Ventas = () => {
                   })}
                 </div>
 
-                {/* Total y finalizar - COMPACTO */}
+                {/* Total y finalizar */}
                 <div style={{
                   backgroundColor: metodoPago === 'efectivo' ? '#d1fae5' : '#dbeafe',
                   padding: '0.75rem',

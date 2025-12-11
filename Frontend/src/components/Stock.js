@@ -1,101 +1,196 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, RefreshCw, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
-import { getProductos, createProducto, updateProducto, deleteProducto } from '../api/api';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, Edit2, Trash2, RefreshCw, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { getProductos, getCategorias, createProducto, updateProducto, deleteProducto } from '../api/api';
 import ProductoForm from './ProductoForm';
-import { useToast  } from '../Toast';
+import { useToast } from '../Toast';
 
 const Stock = () => {
   const [productos, setProductos] = useState([]);
-  const [productosFiltrados, setProductosFiltrados] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [productoEdit, setProductoEdit] = useState(null);
   const [filtrosColapsados, setFiltrosColapsados] = useState(false);
-   const toast = useToast();
+  const toast = useToast();
+  
+  // Estados de paginación
+  const [skip, setSkip] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
+  const LIMIT = 50; // Cargar 50 productos por vez
   
   // Estados de filtros
   const [busqueda, setBusqueda] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
   const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [categorias, setCategorias] = useState(['todas']);
+  
+  // Estados para autocompletado de categorías en filtro
+  const [categoriaInputFiltro, setCategoriaInputFiltro] = useState('');
+  const [mostrarSugerenciasFiltro, setMostrarSugerenciasFiltro] = useState(false);
+  const inputCategoriaFiltroRef = useRef(null);
+  const sugerenciasFiltroRef = useRef(null);
+  
+  // Ref para detectar scroll
+  const observerRef = useRef();
+  const loadMoreRef = useRef(null);
 
+  // Cargar categorías al montar
   useEffect(() => {
-    cargarProductos();
+    cargarCategorias();
   }, []);
 
+  // Cargar productos cuando cambian los filtros
   useEffect(() => {
-    aplicarFiltros();
-  }, [productos, busqueda, filtroCategoria, filtroEstado]);
+    // Resetear y cargar desde cero cuando cambian los filtros
+    setProductos([]);
+    setSkip(0);
+    setHasMore(true);
+    cargarProductos(0, true);
+  }, [busqueda, filtroCategoria, filtroEstado]);
 
-  const cargarProductos = async () => {
+  const cargarCategorias = async () => {
     try {
-      setLoading(true);
-      const response = await getProductos();
-      // Ordenar alfabéticamente por nombre
-      const productosOrdenados = response.data.sort((a, b) => 
-        a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
-      );
-      setProductos(productosOrdenados);
+      const response = await getCategorias();
+      setCategorias(['todas', ...response.data]);
+    } catch (error) {
+      console.error('Error cargando categorías:', error);
+    }
+  };
+
+  // Manejar cambio en input de categoría del filtro
+  const handleCategoriaFiltroChange = (e) => {
+    const valor = e.target.value;
+    setCategoriaInputFiltro(valor);
+    
+    if (valor.trim() === '') {
+      setFiltroCategoria('todas');
+      setMostrarSugerenciasFiltro(false);
+      return;
+    }
+
+    setMostrarSugerenciasFiltro(true);
+  };
+
+  // Seleccionar categoría del filtro
+  const seleccionarCategoriaFiltro = (categoria) => {
+    setCategoriaInputFiltro(categoria === 'todas' ? '' : categoria);
+    setFiltroCategoria(categoria);
+    setMostrarSugerenciasFiltro(false);
+  };
+
+  // Filtrar categorías según búsqueda
+  const categoriasFiltradas = categorias.filter(cat => {
+    if (!categoriaInputFiltro.trim()) return true;
+    if (cat === 'todas') return 'todas las categorías'.includes(categoriaInputFiltro.toLowerCase());
+    return cat.toLowerCase().includes(categoriaInputFiltro.toLowerCase());
+  }).sort((a, b) => {
+    if (a === 'todas') return -1;
+    if (b === 'todas') return 1;
+    return a.localeCompare(b, 'es', { sensitivity: 'base' });
+  });
+
+  // Click fuera de sugerencias del filtro
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        sugerenciasFiltroRef.current &&
+        !sugerenciasFiltroRef.current.contains(event.target) &&
+        inputCategoriaFiltroRef.current &&
+        !inputCategoriaFiltroRef.current.contains(event.target)
+      ) {
+        setMostrarSugerenciasFiltro(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const cargarProductos = async (skipValue = skip, reset = false) => {
+    if (!hasMore && !reset) return;
+    
+    try {
+      if (reset) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const params = {
+        skip: skipValue,
+        limit: LIMIT,
+        ...(busqueda && { busqueda }),
+        ...(filtroCategoria !== 'todas' && { categoria: filtroCategoria }),
+        ...(filtroEstado !== 'todos' && { estado_stock: filtroEstado })
+      };
+
+      const response = await getProductos(params);
+      const { productos: nuevosProductos, total: totalProductos, has_more } = response.data;
+
+      if (reset) {
+        setProductos(nuevosProductos);
+      } else {
+        setProductos(prev => [...prev, ...nuevosProductos]);
+      }
+      
+      setTotal(totalProductos);
+      setHasMore(has_more);
+      setSkip(skipValue + LIMIT);
+
     } catch (error) {
       console.error('Error cargando productos:', error);
       toast.error('Error al cargar productos');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
-  const aplicarFiltros = () => {
-    let resultado = [...productos];
-
-    // Filtro por búsqueda (nombre, categoría o código)
-    if (busqueda.trim() !== '') {
-      const busquedaLower = busqueda.toLowerCase();
-      resultado = resultado.filter(p =>
-        p.nombre.toLowerCase().includes(busquedaLower) ||
-        (p.categoria && p.categoria.toLowerCase().includes(busquedaLower)) ||
-        (p.codigo_barras && p.codigo_barras.includes(busqueda))
-      );
-    }
-
-    // Filtro por categoría
-    if (filtroCategoria !== 'todas') {
-      resultado = resultado.filter(p => 
-        (p.categoria || 'Sin categoría') === filtroCategoria
-      );
-    }
-
-    // Filtro por estado de stock
-    if (filtroEstado !== 'todos') {
-      resultado = resultado.filter(p => {
-        const estado = getEstadoStock(p);
-        return estado.text.toLowerCase() === filtroEstado;
-      });
-    }
-
-    setProductosFiltrados(resultado);
-  };
+  // Intersection Observer para scroll infinito
+  const lastProductRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observerRef.current) observerRef.current.disconnect();
+    
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        cargarProductos();
+      }
+    });
+    
+    if (node) observerRef.current.observe(node);
+  }, [loading, loadingMore, hasMore, skip]);
 
   const handleCrearProducto = async (data) => {
     try {
       await createProducto(data);
-      toast.success('Producto creado exitosamente')
+      toast.success('Producto creado exitosamente');
       setShowForm(false);
-      cargarProductos();
+      // Recargar desde cero
+      setProductos([]);
+      setSkip(0);
+      setHasMore(true);
+      cargarProductos(0, true);
     } catch (error) {
       console.error('Error creando producto:', error);
-      toast.error('Error al crear producto')
+      toast.error('Error al crear producto');
     }
   };
 
   const handleActualizarProducto = async (data) => {
     try {
       await updateProducto(productoEdit.id, data);
-      toast.success('Producto actualizado exitosamente')
+      toast.success('Producto actualizado exitosamente');
       setShowForm(false);
       setProductoEdit(null);
-      cargarProductos();
+      // Recargar desde cero
+      setProductos([]);
+      setSkip(0);
+      setHasMore(true);
+      cargarProductos(0, true);
     } catch (error) {
       console.error('Error actualizando producto:', error);
-      toast.error('Error al actualizar producto')
+      toast.error('Error al actualizar producto');
     }
   };
 
@@ -104,11 +199,15 @@ const Stock = () => {
     
     try {
       await deleteProducto(id);
-      toast.success('Producto eliminado exitosamente')
-      cargarProductos();
+      toast.success('Producto eliminado exitosamente');
+      // Recargar desde cero
+      setProductos([]);
+      setSkip(0);
+      setHasMore(true);
+      cargarProductos(0, true);
     } catch (error) {
       console.error('Error eliminando producto:', error);
-      toast.error('Error al eliminar producto')
+      toast.error('Error al eliminar producto');
     }
   };
 
@@ -120,20 +219,112 @@ const Stock = () => {
 
   const limpiarFiltros = () => {
     setBusqueda('');
+    setCategoriaInputFiltro('');
     setFiltroCategoria('todas');
     setFiltroEstado('todos');
   };
 
-  // Obtener categorías únicas
-  const categorias = ['todas', ...new Set(productos.map(p => p.categoria || 'Sin categoría'))];
+  const handleRefresh = () => {
+    setProductos([]);
+    setSkip(0);
+    setHasMore(true);
+    cargarProductos(0, true);
+  };
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-        <p>Cargando productos...</p>
-      </div>
-    );
-  }
+  // Componente Skeleton para filas de la tabla
+  const SkeletonRow = () => (
+    <tr style={{ borderTop: '1px solid #e5e7eb' }}>
+      <td style={{ padding: '0.75rem' }}>
+        <div style={{ 
+          height: '1rem', 
+          backgroundColor: '#e5e7eb', 
+          borderRadius: '0.25rem',
+          width: '80%',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+        <div style={{ 
+          height: '0.75rem', 
+          backgroundColor: '#e5e7eb', 
+          borderRadius: '0.25rem',
+          width: '50%',
+          marginTop: '0.5rem',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </td>
+      <td style={{ padding: '0.75rem' }}>
+        <div style={{ 
+          height: '1rem', 
+          backgroundColor: '#e5e7eb', 
+          borderRadius: '0.25rem',
+          width: '70%',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </td>
+      <td style={{ padding: '0.75rem' }}>
+        <div style={{ 
+          height: '1rem', 
+          backgroundColor: '#e5e7eb', 
+          borderRadius: '0.25rem',
+          width: '60%',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </td>
+      <td style={{ padding: '0.75rem' }}>
+        <div style={{ 
+          height: '1rem', 
+          backgroundColor: '#e5e7eb', 
+          borderRadius: '0.25rem',
+          width: '60%',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </td>
+      <td style={{ padding: '0.75rem' }}>
+        <div style={{ 
+          height: '1.5rem', 
+          backgroundColor: '#e5e7eb', 
+          borderRadius: '0.25rem',
+          width: '50%',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </td>
+      <td style={{ padding: '0.75rem' }}>
+        <div style={{ 
+          height: '1rem', 
+          backgroundColor: '#e5e7eb', 
+          borderRadius: '0.25rem',
+          width: '40%',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </td>
+      <td style={{ padding: '0.75rem' }}>
+        <div style={{ 
+          height: '1.5rem', 
+          backgroundColor: '#e5e7eb', 
+          borderRadius: '9999px',
+          width: '70%',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </td>
+      <td style={{ padding: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.375rem' }}>
+          <div style={{ 
+            width: '28px',
+            height: '28px',
+            backgroundColor: '#e5e7eb', 
+            borderRadius: '0.375rem',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+          <div style={{ 
+            width: '28px',
+            height: '28px',
+            backgroundColor: '#e5e7eb', 
+            borderRadius: '0.375rem',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        </div>
+      </td>
+    </tr>
+  );
 
   return (
     <div style={{ 
@@ -143,6 +334,19 @@ const Stock = () => {
       flexDirection: 'column',
       overflow: 'hidden'
     }}>
+      {/* Agregar estilos de animación pulse */}
+      <style>
+        {`
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
+          }
+        `}
+      </style>
       
       {/* Barra de búsqueda y filtros - FIJA Y COLAPSABLE */}
       <div style={{
@@ -175,8 +379,11 @@ const Stock = () => {
               {filtrosColapsados ? 'Mostrar filtros' : 'Ocultar filtros'}
             </button>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={cargarProductos} className="btn" style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.875rem', color: '#6b7280', marginRight: '0.5rem' }}>
+              {productos.length} de {total} productos
+            </span>
+            <button onClick={handleRefresh} className="btn" style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 0.75rem' }}>
               <RefreshCw size={16} style={{ marginRight: '0.5rem' }} />
               Actualizar
             </button>
@@ -214,23 +421,90 @@ const Stock = () => {
               </div>
             </div>
 
-            {/* Filtro por categoría */}
-            <div>
+            {/* Filtro por categoría con autocompletado */}
+            <div style={{ position: 'relative' }}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
                 Categoría
               </label>
-              <select
-                value={filtroCategoria}
-                onChange={(e) => setFiltroCategoria(e.target.value)}
+              <input
+                ref={inputCategoriaFiltroRef}
+                type="text"
+                value={categoriaInputFiltro}
+                onChange={handleCategoriaFiltroChange}
+                onFocus={() => setMostrarSugerenciasFiltro(true)}
+                placeholder="Todas las categorías"
                 className="input"
-                style={{ textTransform: 'capitalize', padding: '0.5rem' }}
-              >
-                {categorias.map(cat => (
-                  <option key={cat} value={cat}>
-                    {cat === 'todas' ? 'Todas las categorías' : cat}
-                  </option>
-                ))}
-              </select>
+                style={{ 
+                  textTransform: 'capitalize', 
+                  padding: '0.5rem',
+                  width: '100%'
+                }}
+                autoComplete="off"
+              />
+              
+              {/* Dropdown de sugerencias */}
+              {mostrarSugerenciasFiltro && (
+                <div
+                  ref={sugerenciasFiltroRef}
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '0.375rem',
+                    marginTop: '0.25rem',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000
+                  }}
+                >
+                  {categoriasFiltradas.length > 0 ? (
+                    categoriasFiltradas.map((cat, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => seleccionarCategoriaFiltro(cat)}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          cursor: 'pointer',
+                          borderBottom: idx < categoriasFiltradas.length - 1 ? '1px solid #f3f4f6' : 'none',
+                          transition: 'background-color 0.15s',
+                          textTransform: 'capitalize',
+                          backgroundColor: filtroCategoria === cat ? '#eff6ff' : 'white',
+                          fontWeight: filtroCategoria === cat ? 600 : 400,
+                          color: filtroCategoria === cat ? '#3b82f6' : '#374151'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (filtroCategoria !== cat) {
+                            e.currentTarget.style.backgroundColor = '#f9fafb';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (filtroCategoria !== cat) {
+                            e.currentTarget.style.backgroundColor = 'white';
+                          }
+                        }}
+                      >
+                        {cat === 'todas' ? 'Todas las categorías' : cat}
+                        {filtroCategoria === cat && (
+                          <span style={{ float: 'right', color: '#3b82f6' }}>✓</span>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ 
+                      padding: '0.75rem 1rem', 
+                      color: '#9ca3af',
+                      textAlign: 'center',
+                      fontSize: '0.875rem'
+                    }}>
+                      No se encontraron categorías
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Filtro por estado */}
@@ -247,11 +521,11 @@ const Stock = () => {
                 <option value="todos">Todos</option>
                 <option value="normal">Normal</option>
                 <option value="bajo">Bajo</option>
-                <option value="crítico">Crítico</option>
+                <option value="critico">Crítico</option>
               </select>
             </div>
 
-            {/* Botón limpiar filtros - SIEMPRE VISIBLE */}
+            {/* Botón limpiar filtros */}
             <div>
               <button
                 onClick={limpiarFiltros}
@@ -275,7 +549,7 @@ const Stock = () => {
         )}
       </div>
 
-      {/* Tabla de productos - CON SCROLL */}
+      {/* Tabla de productos - CON SCROLL INFINITO */}
       <div style={{
         backgroundColor: 'white',
         borderRadius: '0.5rem',
@@ -284,7 +558,7 @@ const Stock = () => {
         overflow: 'auto',
         minHeight: 0
       }}>
-        {productosFiltrados.length === 0 ? (
+        {productos.length === 0 && !loading ? (
           <div style={{ 
             padding: '3rem', 
             textAlign: 'center',
@@ -318,98 +592,137 @@ const Stock = () => {
               </tr>
             </thead>
             <tbody>
-              {productosFiltrados.map(producto => {
-                const estado = getEstadoStock(producto);
-                const margen = producto.precio_costo > 0 
-                  ? (((producto.precio_venta - producto.precio_costo) / producto.precio_costo) * 100).toFixed(1)
-                  : 0;
-                
-                return (
-                  <tr key={producto.id} style={{ borderTop: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '0.75rem' }}>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{producto.nombre}</div>
-                        {producto.codigo_barras && (
-                          <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>
-                            CB: {producto.codigo_barras}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td style={{ padding: '0.75rem', textTransform: 'capitalize', fontSize: '0.875rem' }}>
-                      {producto.categoria || 'Sin categoría'}
-                    </td>
-                    <td style={{ padding: '0.75rem', color: '#dc2626', fontWeight: 600, fontSize: '0.875rem' }}>
-                      ${producto.precio_costo.toFixed(2)}
-                    </td>
-                    <td style={{ padding: '0.75rem', color: '#059669', fontWeight: 'bold', fontSize: '0.875rem' }}>
-                      ${producto.precio_venta.toFixed(2)}
-                    </td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <span style={{
-                        backgroundColor: margen > 30 ? '#d1fae5' : margen > 15 ? '#fef3c7' : '#fee2e2',
-                        color: margen > 30 ? '#065f46' : margen > 15 ? '#92400e' : '#991b1b',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '0.25rem',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600
-                      }}>
-                        {margen}%
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.75rem', fontWeight: 'bold', fontSize: '0.875rem' }}>{producto.stock}</td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <span style={{
-                        backgroundColor: estado.color,
-                        color: estado.textColor,
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '9999px',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600
-                      }}>
-                        {estado.text}
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <div style={{ display: 'flex', gap: '0.375rem' }}>
-                        <button
-                          onClick={() => {
-                            setProductoEdit(producto);
-                            setShowForm(true);
-                          }}
-                          style={{
-                            padding: '0.375rem',
-                            backgroundColor: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.375rem',
-                            cursor: 'pointer'
-                          }}
-                          title="Editar producto"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleEliminarProducto(producto.id)}
-                          style={{
-                            padding: '0.375rem',
-                            backgroundColor: '#ef4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.375rem',
-                            cursor: 'pointer'
-                          }}
-                          title="Eliminar producto"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {/* Mostrar skeleton mientras carga la primera vez */}
+              {loading && productos.length === 0 ? (
+                <>
+                  {[...Array(10)].map((_, index) => (
+                    <SkeletonRow key={`skeleton-${index}`} />
+                  ))}
+                </>
+              ) : (
+                productos.map((producto, index) => {
+                  const estado = getEstadoStock(producto);
+                  const margen = producto.precio_costo > 0 
+                    ? (((producto.precio_venta - producto.precio_costo) / producto.precio_costo) * 100).toFixed(1)
+                    : 0;
+                  
+                  // Agregar ref al último elemento para detectar scroll
+                  const isLast = index === productos.length - 1;
+                  
+                  return (
+                    <tr 
+                      key={producto.id} 
+                      ref={isLast ? lastProductRef : null}
+                      style={{ borderTop: '1px solid #e5e7eb' }}
+                    >
+                      <td style={{ padding: '0.75rem' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{producto.nombre}</div>
+                          {producto.codigo_barras && (
+                            <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>
+                              CB: {producto.codigo_barras}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ padding: '0.75rem', textTransform: 'capitalize', fontSize: '0.875rem' }}>
+                        {producto.categoria || 'Sin categoría'}
+                      </td>
+                      <td style={{ padding: '0.75rem', color: '#dc2626', fontWeight: 600, fontSize: '0.875rem' }}>
+                        ${producto.precio_costo.toFixed(2)}
+                      </td>
+                      <td style={{ padding: '0.75rem', color: '#059669', fontWeight: 'bold', fontSize: '0.875rem' }}>
+                        ${producto.precio_venta.toFixed(2)}
+                      </td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <span style={{
+                          backgroundColor: margen > 30 ? '#d1fae5' : margen > 15 ? '#fef3c7' : '#fee2e2',
+                          color: margen > 30 ? '#065f46' : margen > 15 ? '#92400e' : '#991b1b',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.25rem',
+                          fontSize: '0.8125rem',
+                          fontWeight: 600
+                        }}>
+                          {margen}%
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem', fontWeight: 'bold', fontSize: '0.875rem' }}>{producto.stock}</td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <span style={{
+                          backgroundColor: estado.color,
+                          color: estado.textColor,
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '9999px',
+                          fontSize: '0.8125rem',
+                          fontWeight: 600
+                        }}>
+                          {estado.text}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <div style={{ display: 'flex', gap: '0.375rem' }}>
+                          <button
+                            onClick={() => {
+                              setProductoEdit(producto);
+                              setShowForm(true);
+                            }}
+                            style={{
+                              padding: '0.375rem',
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '0.375rem',
+                              cursor: 'pointer'
+                            }}
+                            title="Editar producto"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleEliminarProducto(producto.id)}
+                            style={{
+                              padding: '0.375rem',
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '0.375rem',
+                              cursor: 'pointer'
+                            }}
+                            title="Eliminar producto"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
+        )}
+        
+        {/* Indicador de carga al final */}
+        {loadingMore && (
+          <div style={{ 
+            padding: '1rem', 
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            <p>Cargando más productos...</p>
+          </div>
+        )}
+        
+        {/* Mensaje cuando no hay más productos */}
+        {!hasMore && productos.length > 0 && (
+          <div style={{ 
+            padding: '1rem', 
+            textAlign: 'center',
+            color: '#6b7280',
+            fontSize: '0.875rem'
+          }}>
+            <p>✓ Todos los productos cargados ({total} total)</p>
+          </div>
         )}
       </div>
 

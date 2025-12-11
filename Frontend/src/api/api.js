@@ -28,8 +28,19 @@ export const login = (credentials) => api.post('/auth/login', credentials);
 export const register = (userData) => api.post('/auth/register', userData);
 export const getCurrentUser = () => api.get('/auth/me');
 
-// Productos
-export const getProductos = () => api.get('/productos/');
+// Productos - CON PAGINACIÓN Y FILTROS
+export const getProductos = (params = {}) => {
+  const queryParams = new URLSearchParams();
+  
+  if (params.skip !== undefined) queryParams.append('skip', params.skip);
+  if (params.limit !== undefined) queryParams.append('limit', params.limit);
+  if (params.busqueda) queryParams.append('busqueda', params.busqueda);
+  if (params.categoria && params.categoria !== 'todas') queryParams.append('categoria', params.categoria);
+  if (params.estado_stock && params.estado_stock !== 'todos') queryParams.append('estado_stock', params.estado_stock);
+  
+  return api.get(`/productos/?${queryParams.toString()}`);
+};
+export const getCategorias = () => api.get('/productos/categorias');
 export const getProducto = (id) => api.get(`/productos/${id}`);
 export const createProducto = (data) => api.post('/productos/', data);
 export const updateProducto = (id, data) => api.put(`/productos/${id}`, data);
@@ -44,8 +55,8 @@ export const getVenta = (id) => api.get(`/ventas/${id}`);
 export const createVenta = (data) => api.post('/ventas/', data);
 
 // Reportes
-export const getDashboard = () => api.get('/reportes/dashboard'); // Endpoint original (para otros usos)
-export const getDashboardHoy = () => api.get('/reportes/dashboard-hoy'); // NUEVO: Solo datos de hoy
+export const getDashboard = () => api.get('/reportes/dashboard');
+export const getDashboardHoy = () => api.get('/reportes/dashboard-hoy');
 export const getVentasMensuales = () => api.get('/reportes/ventas/mensuales');
 export const getProductosRentabilidad = () => api.get('/reportes/productos/rentabilidad');
 
@@ -72,27 +83,21 @@ export const getCotizaciones = async () => {
 
     // Obtener cotizaciones en paralelo
     const [dolarData, realData] = await Promise.all([
-      // Dólar oficial de DolarAPI (más confiable que BCRA API)
       axios.get('https://dolarapi.com/v1/dolares/oficial'),
-      // Real brasileño
       axios.get('https://dolarapi.com/v1/cotizaciones/brl')
     ]);
 
-    // Calcular promedio entre compra y venta para dólar
     const dolarCompra = parseFloat(dolarData.data.compra);
     const dolarVenta = parseFloat(dolarData.data.venta);
     const dolarPromedio = (dolarCompra + dolarVenta) / 2;
 
-    // Calcular promedio para real
     const realCompra = parseFloat(realData.data.compra);
     const realVenta = parseFloat(realData.data.venta);
     const realPromedio = (realCompra + realVenta) / 2;
 
-    // Como los precios están en ARS, necesitamos la tasa de conversión
-    // 1 ARS = X USD (invertimos el valor)
     const rates = {
-      USD: 1 / dolarPromedio, // Cuántos USD por 1 ARS
-      BRL: 1 / realPromedio,  // Cuántos BRL por 1 ARS
+      USD: 1 / dolarPromedio,
+      BRL: 1 / realPromedio,
       dolarCompra: dolarCompra,
       dolarVenta: dolarVenta,
       dolarPromedio: dolarPromedio,
@@ -103,7 +108,6 @@ export const getCotizaciones = async () => {
       fecha: new Date().toLocaleString('es-AR')
     };
 
-    // Guardar en cache
     localStorage.setItem(CACHE_KEY, JSON.stringify(rates));
     localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
 
@@ -117,18 +121,16 @@ export const getCotizaciones = async () => {
   } catch (error) {
     console.error('❌ Error obteniendo cotizaciones:', error.message);
     
-    // Intentar usar cache aunque haya expirado
     const cachedRates = localStorage.getItem(CACHE_KEY);
     if (cachedRates) {
       console.log('⚠️ Usando cotizaciones en cache (expiradas)');
       return JSON.parse(cachedRates);
     }
     
-    // Valores por defecto (aproximados a diciembre 2024)
     console.log('⚠️ Usando valores por defecto');
     return { 
-      USD: 1 / 1050,  // ~$1050 por dólar
-      BRL: 1 / 210,   // ~$210 por real
+      USD: 1 / 1050,
+      BRL: 1 / 210,
       dolarPromedio: 1050,
       realPromedio: 210,
       timestamp: Date.now(),
@@ -141,7 +143,7 @@ export const getVentasPorPeriodo = (periodo) => api.get(`/reportes/ventas-por-pe
 export const getCategoriasVendidas = (limite = 10) => api.get(`/reportes/categorias-mas-vendidas?limite=${limite}`);
 export const getProductosVendidos = (limite = 10) => api.get(`/reportes/productos-mas-vendidos?limite=${limite}`);
 export const getVentasPorHorario = () => api.get('/reportes/ventas-por-horario');
-export const getVentasPorHorarioFecha = (fecha) => api.get(`/reportes/ventas-por-horario-fecha${fecha ? `?fecha=${fecha}` : ''}`);
+export const getVentasPorHorarioFecha = (fecha) => api.get(`/reportes/ventas-por-horario?fecha=${fecha}`);
 export const getGanancias = (periodo) => api.get(`/reportes/ganancias?periodo=${periodo}`);
 export const getMetodosPago = () => api.get('/reportes/metodos-pago');
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, Package, ShoppingCart, AlertTriangle, TrendingUp } from 'lucide-react';
 import { getDashboardHoy, getProductosStockBajo, getProductosStockCritico } from '../api/api';
-import { useToast  } from '../Toast';
+import { useToast } from '../Toast';
 
 const Dashboard = () => {
   const toast = useToast();
@@ -25,7 +25,7 @@ const Dashboard = () => {
     try {
       setLoading(true);
       const [dashboardRes, stockBajoRes, stockCriticoRes] = await Promise.all([
-        getDashboardHoy(), // Usar el nuevo endpoint
+        getDashboardHoy(),
         getProductosStockBajo(),
         getProductosStockCritico()
       ]);
@@ -55,13 +55,70 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-        <p>Cargando datos...</p>
+  // Componente Skeleton para tarjetas de estadísticas
+  const StatCardSkeleton = () => (
+    <div style={{
+      backgroundColor: '#f3f4f6',
+      padding: '1.25rem',
+      borderRadius: '0.5rem',
+      border: '2px solid #e5e7eb'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ 
+            height: '0.875rem',
+            width: '60%',
+            backgroundColor: '#e5e7eb',
+            borderRadius: '0.25rem',
+            marginBottom: '0.75rem',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+          <div style={{ 
+            height: '1.75rem',
+            width: '80%',
+            backgroundColor: '#e5e7eb',
+            borderRadius: '0.25rem',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        </div>
+        <div style={{ 
+          width: '44px',
+          height: '44px',
+          backgroundColor: '#e5e7eb',
+          borderRadius: '0.375rem',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
       </div>
-    );
-  }
+    </div>
+  );
+
+  // Componente Skeleton para productos
+  const ProductoSkeleton = () => (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '0.75rem',
+      backgroundColor: '#f9fafb',
+      borderRadius: '0.375rem',
+      border: '1px solid #e5e7eb'
+    }}>
+      <div style={{ 
+        height: '1rem',
+        width: '60%',
+        backgroundColor: '#e5e7eb',
+        borderRadius: '0.25rem',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      <div style={{ 
+        height: '1.5rem',
+        width: '25%',
+        backgroundColor: '#e5e7eb',
+        borderRadius: '0.25rem',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+    </div>
+  );
 
   return (
     <div style={{ 
@@ -71,11 +128,25 @@ const Dashboard = () => {
       flexDirection: 'column',
       overflow: 'hidden'
     }}>
+      {/* Agregar estilos de animación pulse */}
+      <style>
+        {`
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
+          }
+        `}
+      </style>
+
       <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '1rem', flexShrink: 0 }}>
         Panel de Control - Hoy
       </h2>
 
-      {/* Tarjetas de estadísticas - FIJAS */}
+      {/* Tarjetas de estadísticas */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
@@ -83,85 +154,96 @@ const Dashboard = () => {
         marginBottom: '1rem',
         flexShrink: 0
       }}>
-        {/* Ganancias de hoy */}
-        <div style={{
-          backgroundColor: '#d1fae5',
-          padding: '1.25rem',
-          borderRadius: '0.5rem',
-          border: '2px solid #86efac'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ fontSize: '0.8125rem', color: '#15803d', fontWeight: 600 }}>
-                Ganancias Hoy
-              </p>
-              <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#166534' }}>
-                ${stats.ganancia_hoy.toFixed(2)}
-              </p>
+        {loading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            {/* Ganancias de hoy */}
+            <div style={{
+              backgroundColor: '#d1fae5',
+              padding: '1.25rem',
+              borderRadius: '0.5rem',
+              border: '2px solid #86efac'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <p style={{ fontSize: '0.8125rem', color: '#15803d', fontWeight: 600 }}>
+                    Ganancias Hoy
+                  </p>
+                  <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#166534' }}>
+                    ${stats.ganancia_hoy.toFixed(2)}
+                  </p>
+                </div>
+                <TrendingUp size={44} style={{ color: '#22c55e' }} />
+              </div>
             </div>
-            <TrendingUp size={44} style={{ color: '#22c55e' }} />
-          </div>
-        </div>
 
-        {/* Ventas de hoy */}
-        <div style={{
-          backgroundColor: '#dbeafe',
-          padding: '1.25rem',
-          borderRadius: '0.5rem',
-          border: '2px solid #93c5fd'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ fontSize: '0.8125rem', color: '#1e40af', fontWeight: 600 }}>
-                Ventas Hoy
-              </p>
-              <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e3a8a' }}>
-                ${stats.ventas_hoy.toFixed(2)}
-              </p>
+            {/* Ventas de hoy */}
+            <div style={{
+              backgroundColor: '#dbeafe',
+              padding: '1.25rem',
+              borderRadius: '0.5rem',
+              border: '2px solid #93c5fd'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <p style={{ fontSize: '0.8125rem', color: '#1e40af', fontWeight: 600 }}>
+                    Ventas Hoy
+                  </p>
+                  <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e3a8a' }}>
+                    ${stats.ventas_hoy.toFixed(2)}
+                  </p>
+                </div>
+                <DollarSign size={44} style={{ color: '#3b82f6' }} />
+              </div>
             </div>
-            <DollarSign size={44} style={{ color: '#3b82f6' }} />
-          </div>
-        </div>
 
-        {/* Productos vendidos hoy */}
-        <div style={{
-          backgroundColor: '#fce7f3',
-          padding: '1.25rem',
-          borderRadius: '0.5rem',
-          border: '2px solid #fbcfe8'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ fontSize: '0.8125rem', color: '#9f1239', fontWeight: 600 }}>
-                Productos Vendidos
-              </p>
-              <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#881337' }}>
-                {stats.productos_vendidos_hoy}
-              </p>
+            {/* Productos vendidos hoy */}
+            <div style={{
+              backgroundColor: '#fce7f3',
+              padding: '1.25rem',
+              borderRadius: '0.5rem',
+              border: '2px solid #fbcfe8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <p style={{ fontSize: '0.8125rem', color: '#9f1239', fontWeight: 600 }}>
+                    Productos Vendidos
+                  </p>
+                  <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#881337' }}>
+                    {stats.productos_vendidos_hoy}
+                  </p>
+                </div>
+                <Package size={44} style={{ color: '#ec4899' }} />
+              </div>
             </div>
-            <Package size={44} style={{ color: '#ec4899' }} />
-          </div>
-        </div>
 
-        {/* Transacciones hoy */}
-        <div style={{
-          backgroundColor: '#f3e8ff',
-          padding: '1.25rem',
-          borderRadius: '0.5rem',
-          border: '2px solid #d8b4fe'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ fontSize: '0.8125rem', color: '#6b21a8', fontWeight: 600 }}>
-                Transacciones Hoy
-              </p>
-              <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#581c87' }}>
-                {stats.cantidad_ventas_hoy}
-              </p>
+            {/* Transacciones hoy */}
+            <div style={{
+              backgroundColor: '#f3e8ff',
+              padding: '1.25rem',
+              borderRadius: '0.5rem',
+              border: '2px solid #d8b4fe'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <p style={{ fontSize: '0.8125rem', color: '#6b21a8', fontWeight: 600 }}>
+                    Transacciones Hoy
+                  </p>
+                  <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#581c87' }}>
+                    {stats.cantidad_ventas_hoy}
+                  </p>
+                </div>
+                <ShoppingCart size={44} style={{ color: '#a855f7' }} />
+              </div>
             </div>
-            <ShoppingCart size={44} style={{ color: '#a855f7' }} />
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Container con scroll para alertas de stock */}
@@ -173,120 +255,173 @@ const Dashboard = () => {
         flexDirection: 'column',
         gap: '1rem'
       }}>
-        {/* Productos con stock crítico */}
-        {productosStockCritico.length > 0 && (
-          <div style={{
-            backgroundColor: '#fee2e2',
-            padding: '1.25rem',
-            borderRadius: '0.5rem',
-            border: '2px solid #fca5a5',
-            flexShrink: 0
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <AlertTriangle size={22} style={{ color: '#dc2626' }} />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#991b1b' }}>
-                🚨 Stock CRÍTICO (menos de 10 unidades)
-              </h3>
-            </div>
-
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '0.5rem',
-              maxHeight: '250px',
-              overflowY: 'auto',
-              paddingRight: '0.5rem'
+        {loading ? (
+          <>
+            {/* Skeleton para productos con stock crítico */}
+            <div style={{
+              backgroundColor: '#f3f4f6',
+              padding: '1.25rem',
+              borderRadius: '0.5rem',
+              border: '2px solid #e5e7eb',
+              flexShrink: 0
             }}>
-              {productosStockCritico.map(producto => (
-                <div
-                  key={producto.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.75rem',
-                    backgroundColor: '#fff',
-                    borderRadius: '0.375rem',
-                    border: '2px solid #dc2626'
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{producto.nombre}</span>
-                  <span style={{ 
-                    color: '#dc2626', 
-                    fontWeight: 'bold',
-                    backgroundColor: '#fee2e2',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '0.25rem'
-                  }}>
-                    ⚠️ Stock: {producto.stock}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Productos con stock bajo */}
-        {productosStockBajo.length > 0 && (
-          <div style={{
-            backgroundColor: 'white',
-            padding: '1.25rem',
-            borderRadius: '0.5rem',
-            border: '2px solid #e5e7eb',
-            flexShrink: 0
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <AlertTriangle size={22} style={{ color: '#f59e0b' }} />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
-                Productos con Stock Bajo
-              </h3>
+              <div style={{ 
+                height: '1.5rem',
+                width: '50%',
+                backgroundColor: '#e5e7eb',
+                borderRadius: '0.25rem',
+                marginBottom: '1rem',
+                animation: 'pulse 1.5s ease-in-out infinite'
+              }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <ProductoSkeleton />
+                <ProductoSkeleton />
+                <ProductoSkeleton />
+              </div>
             </div>
 
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '0.5rem',
-              maxHeight: '250px',
-              overflowY: 'auto',
-              paddingRight: '0.5rem'
+            {/* Skeleton para productos con stock bajo */}
+            <div style={{
+              backgroundColor: '#f3f4f6',
+              padding: '1.25rem',
+              borderRadius: '0.5rem',
+              border: '2px solid #e5e7eb',
+              flexShrink: 0
             }}>
-              {productosStockBajo.map(producto => (
-                <div
-                  key={producto.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.75rem',
-                    backgroundColor: '#fef3c7',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #fcd34d'
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{producto.nombre}</span>
-                  <span style={{ color: '#92400e', fontWeight: 'bold' }}>
-                    Stock: {producto.stock} / Mínimo: {producto.stock_minimo}
-                  </span>
-                </div>
-              ))}
+              <div style={{ 
+                height: '1.5rem',
+                width: '50%',
+                backgroundColor: '#e5e7eb',
+                borderRadius: '0.25rem',
+                marginBottom: '1rem',
+                animation: 'pulse 1.5s ease-in-out infinite'
+              }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <ProductoSkeleton />
+                <ProductoSkeleton />
+                <ProductoSkeleton />
+                <ProductoSkeleton />
+              </div>
             </div>
-          </div>
-        )}
+          </>
+        ) : (
+          <>
+            {/* Productos con stock crítico */}
+            {productosStockCritico.length > 0 && (
+              <div style={{
+                backgroundColor: '#fee2e2',
+                padding: '1.25rem',
+                borderRadius: '0.5rem',
+                border: '2px solid #fca5a5',
+                flexShrink: 0
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <AlertTriangle size={22} style={{ color: '#dc2626' }} />
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#991b1b' }}>
+                    🚨 Stock CRÍTICO (menos de 10 unidades)
+                  </h3>
+                </div>
 
-        {/* Mensaje cuando no hay alertas */}
-        {productosStockCritico.length === 0 && productosStockBajo.length === 0 && (
-          <div style={{
-            backgroundColor: '#d1fae5',
-            padding: '2rem',
-            borderRadius: '0.5rem',
-            border: '2px solid #86efac',
-            textAlign: 'center',
-            flexShrink: 0
-          }}>
-            <p style={{ fontSize: '1.125rem', fontWeight: 600, color: '#065f46' }}>
-              ✅ No hay productos con stock bajo o crítico
-            </p>
-          </div>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '0.5rem',
+                  maxHeight: '250px',
+                  overflowY: 'auto',
+                  paddingRight: '0.5rem'
+                }}>
+                  {productosStockCritico.map(producto => (
+                    <div
+                      key={producto.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.75rem',
+                        backgroundColor: '#fff',
+                        borderRadius: '0.375rem',
+                        border: '2px solid #dc2626'
+                      }}
+                    >
+                      <span style={{ fontWeight: 600 }}>{producto.nombre}</span>
+                      <span style={{ 
+                        color: '#dc2626', 
+                        fontWeight: 'bold',
+                        backgroundColor: '#fee2e2',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '0.25rem'
+                      }}>
+                        ⚠️ Stock: {producto.stock}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Productos con stock bajo */}
+            {productosStockBajo.length > 0 && (
+              <div style={{
+                backgroundColor: 'white',
+                padding: '1.25rem',
+                borderRadius: '0.5rem',
+                border: '2px solid #e5e7eb',
+                flexShrink: 0
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <AlertTriangle size={22} style={{ color: '#f59e0b' }} />
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+                    Productos con Stock Bajo
+                  </h3>
+                </div>
+
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '0.5rem',
+                  maxHeight: '250px',
+                  overflowY: 'auto',
+                  paddingRight: '0.5rem'
+                }}>
+                  {productosStockBajo.map(producto => (
+                    <div
+                      key={producto.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.75rem',
+                        backgroundColor: '#fef3c7',
+                        borderRadius: '0.375rem',
+                        border: '1px solid #fcd34d'
+                      }}
+                    >
+                      <span style={{ fontWeight: 600 }}>{producto.nombre}</span>
+                      <span style={{ color: '#92400e', fontWeight: 'bold' }}>
+                        Stock: {producto.stock} / Mínimo: {producto.stock_minimo}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mensaje cuando no hay alertas */}
+            {productosStockCritico.length === 0 && productosStockBajo.length === 0 && (
+              <div style={{
+                backgroundColor: '#d1fae5',
+                padding: '2rem',
+                borderRadius: '0.5rem',
+                border: '2px solid #86efac',
+                textAlign: 'center',
+                flexShrink: 0
+              }}>
+                <p style={{ fontSize: '1.125rem', fontWeight: 600, color: '#065f46' }}>
+                  ✅ No hay productos con stock bajo o crítico
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
