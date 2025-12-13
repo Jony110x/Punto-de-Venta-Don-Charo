@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Edit2, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, X, AlertTriangle } from 'lucide-react';
+import { Plus, Edit2, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { getProductos, getCategorias, createProducto, updateProducto, deleteProducto } from '../api/api';
 import ProductoForm from './ProductoForm';
 import { useToast } from '../Toast';
@@ -19,10 +19,11 @@ const Stock = () => {
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
-  const LIMIT = 50; // Cargar 50 productos por vez
+  const LIMIT = 50;
   
   // Estados de filtros
   const [busqueda, setBusqueda] = useState('');
+  const [busquedaDebounced, setBusquedaDebounced] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [categorias, setCategorias] = useState(['todas']);
@@ -33,9 +34,11 @@ const Stock = () => {
   const inputCategoriaFiltroRef = useRef(null);
   const sugerenciasFiltroRef = useRef(null);
   
-  // Ref para detectar scroll
+  // Refs
   const observerRef = useRef();
-  const loadMoreRef = useRef(null);
+  const debounceTimerRef = useRef(null);
+  const abortControllerRef = useRef(null);
+  const requestIdRef = useRef(0); // ID único para cada petición
 
   // Anchos fijos de columnas
   const COLUMN_WIDTHS = {
@@ -49,19 +52,63 @@ const Stock = () => {
     acciones: '15%'
   };
 
+  // Debounce para búsqueda
+  useEffect(() => {
+    // Cancelar timer anterior
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    // Si el input está vacío, actualizar inmediatamente
+    if (busqueda.trim() === '') {
+      setBusquedaDebounced('');
+      return;
+    }
+
+    // Si tiene texto, aplicar debounce
+    const valorActual = busqueda; // Capturar el valor actual
+    
+    debounceTimerRef.current = setTimeout(() => {
+      setBusquedaDebounced(valorActual);
+      debounceTimerRef.current = null;
+    }, 200);
+
+    // Cleanup al desmontar
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, [busqueda]);
+
   // Cargar categorías al montar
   useEffect(() => {
     cargarCategorias();
   }, []);
 
-  // Cargar productos cuando cambian los filtros
+  // Cargar productos cuando cambian los filtros DEBOUNCED
   useEffect(() => {
-    // Resetear y cargar desde cero cuando cambian los filtros
+    // Cancelar petición anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Resetear estados
     setProductos([]);
     setSkip(0);
     setHasMore(true);
+    
+    // Cargar desde cero
     cargarProductos(0, true);
-  }, [busqueda, filtroCategoria, filtroEstado]);
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [busquedaDebounced, filtroCategoria, filtroEstado]);
 
   const cargarCategorias = async () => {
     try {
@@ -72,7 +119,6 @@ const Stock = () => {
     }
   };
 
-  // Manejar cambio en input de categoría del filtro
   const handleCategoriaFiltroChange = (e) => {
     const valor = e.target.value;
     setCategoriaInputFiltro(valor);
@@ -86,14 +132,12 @@ const Stock = () => {
     setMostrarSugerenciasFiltro(true);
   };
 
-  // Seleccionar categoría del filtro
   const seleccionarCategoriaFiltro = (categoria) => {
     setCategoriaInputFiltro(categoria === 'todas' ? '' : categoria);
     setFiltroCategoria(categoria);
     setMostrarSugerenciasFiltro(false);
   };
 
-  // Filtrar categorías según búsqueda
   const categoriasFiltradas = categorias.filter(cat => {
     if (!categoriaInputFiltro.trim()) return true;
     if (cat === 'todas') return 'todas las categorías'.includes(categoriaInputFiltro.toLowerCase());
@@ -104,7 +148,6 @@ const Stock = () => {
     return a.localeCompare(b, 'es', { sensitivity: 'base' });
   });
 
-  // Click fuera de sugerencias del filtro
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -121,8 +164,17 @@ const Stock = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const cargarProductos = async (skipValue = skip, reset = false) => {
+  const cargarProductos = async (skipValue, reset = false) => {
+    const currentSkip = skipValue !== undefined ? skipValue : skip;
+    
     if (!hasMore && !reset) return;
+    
+    // Incrementar ID de petición y guardar el actual
+    requestIdRef.current += 1;
+    const thisRequestId = requestIdRef.current;
+    
+    // Crear nuevo AbortController para esta petición
+    abortControllerRef.current = new AbortController();
     
     try {
       if (reset) {
@@ -132,43 +184,55 @@ const Stock = () => {
       }
 
       const params = {
-        skip: skipValue,
+        skip: currentSkip,
         limit: LIMIT,
-        ...(busqueda && { busqueda }),
+        ...(busquedaDebounced && { busqueda: busquedaDebounced }),
         ...(filtroCategoria !== 'todas' && { categoria: filtroCategoria }),
         ...(filtroEstado !== 'todos' && { estado_stock: filtroEstado })
       };
 
       const response = await getProductos(params);
+      
+      // Verificar si esta petición sigue siendo la más reciente
+      if (thisRequestId !== requestIdRef.current) {
+        return;
+      }
+      
       const { productos: nuevosProductos, total: totalProductos, has_more } = response.data;
 
       if (reset) {
         setProductos(nuevosProductos);
+        setSkip(LIMIT);
       } else {
         setProductos(prev => [...prev, ...nuevosProductos]);
+        setSkip(currentSkip + LIMIT);
       }
       
       setTotal(totalProductos);
       setHasMore(has_more);
-      setSkip(skipValue + LIMIT);
 
     } catch (error) {
-      console.error('Error cargando productos:', error);
-      toast.error('Error al cargar productos');
+      // No mostrar error si la petición fue cancelada
+      if (error.name !== 'AbortError' && error.name !== 'CanceledError') {
+        console.error('Error cargando productos:', error);
+        toast.error('Error al cargar productos');
+      }
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      // Solo actualizar loading si esta es la petición más reciente
+      if (thisRequestId === requestIdRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   };
 
-  // Intersection Observer para scroll infinito
   const lastProductRef = useCallback(node => {
     if (loading || loadingMore) return;
     if (observerRef.current) observerRef.current.disconnect();
     
     observerRef.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
-        cargarProductos();
+        cargarProductos(skip, false);
       }
     });
     
@@ -180,7 +244,6 @@ const Stock = () => {
       await createProducto(data);
       toast.success('Producto creado exitosamente');
       setShowForm(false);
-      // Recargar desde cero
       setProductos([]);
       setSkip(0);
       setHasMore(true);
@@ -197,7 +260,6 @@ const Stock = () => {
       toast.success('Producto actualizado exitosamente');
       setShowForm(false);
       setProductoEdit(null);
-      // Recargar desde cero
       setProductos([]);
       setSkip(0);
       setHasMore(true);
@@ -221,7 +283,6 @@ const Stock = () => {
       toast.success('Producto eliminado exitosamente');
       setShowDeleteModal(false);
       setProductoAEliminar(null);
-      // Recargar desde cero
       setProductos([]);
       setSkip(0);
       setHasMore(true);
@@ -252,7 +313,6 @@ const Stock = () => {
     cargarProductos(0, true);
   };
 
-  // Componente Skeleton para filas de la tabla
   const SkeletonRow = () => (
     <tr style={{ borderTop: '1px solid #e5e7eb' }}>
       <td style={{ padding: '0.75rem', width: COLUMN_WIDTHS.producto }}>
@@ -355,7 +415,6 @@ const Stock = () => {
       flexDirection: 'column',
       overflow: 'hidden'
     }}>
-      {/* Agregar estilos de animación pulse */}
       <style>
         {`
           @keyframes pulse {
@@ -379,7 +438,6 @@ const Stock = () => {
         `}
       </style>
       
-      {/* Barra de búsqueda y filtros - FIJA Y COLAPSABLE */}
       <div style={{
         backgroundColor: 'white',
         padding: filtrosColapsados ? '0.75rem' : '1rem', 
@@ -425,10 +483,8 @@ const Stock = () => {
           </div>
         </div>
 
-        {/* Filtros colapsables */}
         {!filtrosColapsados && (
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '0.75rem', alignItems: 'end' }}>
-            {/* Búsqueda por texto */}
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
                 Buscar por nombre o categoría
@@ -452,7 +508,6 @@ const Stock = () => {
               </div>
             </div>
 
-            {/* Filtro por categoría con autocompletado */}
             <div style={{ position: 'relative' }}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
                 Categoría
@@ -473,7 +528,6 @@ const Stock = () => {
                 autoComplete="off"
               />
               
-              {/* Dropdown de sugerencias */}
               {mostrarSugerenciasFiltro && (
                 <div
                   ref={sugerenciasFiltroRef}
@@ -538,7 +592,6 @@ const Stock = () => {
               )}
             </div>
 
-            {/* Filtro por estado */}
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
                 Estado de Stock
@@ -556,7 +609,6 @@ const Stock = () => {
               </select>
             </div>
 
-            {/* Botón limpiar filtros */}
             <div>
               <button
                 onClick={limpiarFiltros}
@@ -580,7 +632,6 @@ const Stock = () => {
         )}
       </div>
 
-      {/* Tabla de productos - CON SCROLL INFINITO */}
       <div style={{
         backgroundColor: 'white',
         borderRadius: '0.5rem',
@@ -623,7 +674,6 @@ const Stock = () => {
               </tr>
             </thead>
             <tbody>
-              {/* Mostrar skeleton mientras carga la primera vez */}
               {loading && productos.length === 0 ? (
                 <>
                   {[...Array(10)].map((_, index) => (
@@ -637,7 +687,6 @@ const Stock = () => {
                     ? (((producto.precio_venta - producto.precio_costo) / producto.precio_costo) * 100).toFixed(1)
                     : 0;
                   
-                  // Agregar ref al último elemento para detectar scroll
                   const isLast = index === productos.length - 1;
                   
                   return (
@@ -733,7 +782,6 @@ const Stock = () => {
           </table>
         )}
         
-        {/* Indicador de carga al final */}
         {loadingMore && (
           <div style={{ 
             padding: '1rem', 
@@ -744,7 +792,6 @@ const Stock = () => {
           </div>
         )}
         
-        {/* Mensaje cuando no hay más productos */}
         {!hasMore && productos.length > 0 && (
           <div style={{ 
             padding: '1rem', 
@@ -757,7 +804,6 @@ const Stock = () => {
         )}
       </div>
 
-      {/* Modal de confirmación de eliminación */}
       {showDeleteModal && productoAEliminar && (
         <div style={{
           position: 'fixed',
@@ -781,7 +827,6 @@ const Stock = () => {
             animation: 'slideIn 0.2s ease-out'
           }}>
             
-            {/* Header del modal */}
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{
                 backgroundColor: '#fee2e2',
@@ -796,7 +841,6 @@ const Stock = () => {
               </h3>
             </div>
 
-            {/* Contenido */}
             <div style={{ marginBottom: '1.5rem' }}>
               <p style={{ color: '#6b7280', marginBottom: '1rem', lineHeight: '1.5' }}>
                 ¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.
@@ -816,7 +860,6 @@ const Stock = () => {
               </div>
             </div>
 
-            {/* Botones */}
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => {
