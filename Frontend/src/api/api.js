@@ -107,9 +107,14 @@ export const getCategorias = (params = {}) => {
 };
 
 export const getProducto = (id) => api.get(`/productos/${id}`);
+
 export const createProducto = (data) => api.post('/productos/', data);
+
 export const updateProducto = (id, data) => api.put(`/productos/${id}`, data);
+
 export const deleteProducto = (id) => api.delete(`/productos/${id}`);
+
+export const actualizarPreciosMasivo = (data) => api.patch('/productos/actualizar-precios-masivo', data);
 
 export const getProductosStockBajo = (params = {}) => {
   const queryParams = new URLSearchParams();
@@ -138,6 +143,14 @@ export const buscarPorCodigo = async (codigo) => {
   
   // Modo online: consultar API
   return api.get(`/productos/buscar-codigo?codigo=${codigo}`);
+};
+
+export const getProductosIdsFiltrados = (params = {}) => {
+  const queryParams = new URLSearchParams();
+  if (params.busqueda) queryParams.append('busqueda', params.busqueda);
+  if (params.categoria && params.categoria !== 'todas') queryParams.append('categoria', params.categoria);
+  if (params.estado_stock && params.estado_stock !== 'todos') queryParams.append('estado_stock', params.estado_stock);
+  return api.get(`/productos/ids-filtrados?${queryParams.toString()}`);
 };
 
 // ==================== VENTAS ====================

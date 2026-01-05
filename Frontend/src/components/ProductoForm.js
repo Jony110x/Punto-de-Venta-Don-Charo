@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { getCategorias } from '../api/api';
@@ -13,7 +11,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     nombre: producto?.nombre || '',
     descripcion: producto?.descripcion || '',
     precio_costo: producto?.precio_costo || '',
-    precio_venta: producto?.precio_venta || '',
+    margen_porcentaje: producto?.margen_porcentaje || 25, // ✅ NUEVO
     stock: producto?.stock || '',
     stock_minimo: producto?.stock_minimo || 10,
     categoria: producto?.categoria || '',
@@ -41,6 +39,16 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
   const observerCategoriasRef = useRef(null);
   const timerBusquedaRef = useRef(null);
   const scrollAjustadoRef = useRef(false);
+
+  // ✅ CALCULAR PRECIO DE VENTA AUTOMÁTICAMENTE
+  const precioVentaCalculado = formData.precio_costo && formData.margen_porcentaje
+    ? (parseFloat(formData.precio_costo) * (1 + parseFloat(formData.margen_porcentaje) / 100)).toFixed(2)
+    : 0;
+
+  // ✅ CALCULAR GANANCIA POR UNIDAD
+  const gananciaPorUnidad = formData.precio_costo
+    ? (precioVentaCalculado - formData.precio_costo).toFixed(2)
+    : 0;
 
   // Limpiar timer al desmontar
   useEffect(() => {
@@ -79,7 +87,6 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     });
   }, []);
 
-  // Ajustar scroll cuando aparecen sugerencias
   useEffect(() => {
     if (mostrarSugerencias && sugerenciasLocales.length > 0 && !scrollAjustadoRef.current) {
       ajustarScrollModal();
@@ -87,7 +94,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     }
   }, [mostrarSugerencias, sugerenciasLocales, ajustarScrollModal]);
 
-  // Cargar cache inicial de categorías para búsqueda local rápida
+  // Cargar cache inicial de categorías
   useEffect(() => {
     const cargarCategoriasIniciales = async () => {
       try {
@@ -125,7 +132,6 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
 
       const response = await getCategorias(params);
       
-      // Manejar diferentes formatos de respuesta
       let nuevasCategorias, total, has_more;
       
       if (Array.isArray(response.data)) {
@@ -179,7 +185,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     }
   };
 
-  // Intersection Observer para scroll infinito de categorías
+  // Intersection Observer para scroll infinito
   const lastCategoriaRef = useCallback(node => {
     if (loadingCategorias) return;
     if (observerCategoriasRef.current) observerCategoriasRef.current.disconnect();
@@ -193,7 +199,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     if (node) observerCategoriasRef.current.observe(node);
   }, [loadingCategorias, hasMoreCategorias, skipCategorias]);
 
-  // Manejar cambio en input de categoría con búsqueda local
+  // Manejar cambio en input de categoría
   const handleCategoriaChange = (e) => {
     const valor = e.target.value;
     setCategoriaInput(valor);
@@ -210,7 +216,6 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
       return;
     }
     
-    // Filtrado local instantáneo
     const valorLower = valor.toLowerCase();
     const sugerenciasFiltradas = categoriasCache.filter(cat =>
       cat.toLowerCase().includes(valorLower)
@@ -221,7 +226,6 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     scrollAjustadoRef.current = false;
   };
 
-  // Seleccionar categoría de sugerencias
   const seleccionarCategoria = (categoria) => {
     setCategoriaInput(categoria);
     setFormData(prev => ({ ...prev, categoria }));
@@ -229,7 +233,6 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     scrollAjustadoRef.current = false;
   };
 
-  // Crear nueva categoría
   const crearNuevaCategoria = () => {
     setFormData(prev => ({ ...prev, categoria: categoriaInput }));
     setMostrarSugerencias(false);
@@ -253,11 +256,6 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Calcular margen de ganancia
-  const margenGanancia = formData.precio_costo && formData.precio_venta
-    ? (((formData.precio_venta - formData.precio_costo) / formData.precio_costo) * 100).toFixed(2)
-    : 0;
-
   // Validar y enviar formulario
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -267,11 +265,12 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
       return;
     }
     
-    if (parseFloat(formData.precio_venta) <= parseFloat(formData.precio_costo)) {
-      toast.warning('El precio de venta debe ser mayor al precio de costo');
+    if (parseFloat(formData.margen_porcentaje) < 0) {
+      toast.warning('El margen debe ser mayor o igual a 0%');
       return;
     }
     
+    // ✅ Enviar sin precio_venta, se calculará en backend
     onSubmit(formData);
   };
 
@@ -280,7 +279,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'precio_costo' || name === 'precio_venta' || name === 'stock' || name === 'stock_minimo' 
+      [name]: name === 'precio_costo' || name === 'margen_porcentaje' || name === 'stock' || name === 'stock_minimo' 
         ? parseFloat(value) || 0 
         : value
     }));
@@ -369,7 +368,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                 />
               </div>
 
-              {/* Precios */}
+              {/* ✅ NUEVO: Precio de Costo y Margen de Ganancia */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
@@ -384,40 +383,48 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                     step="0.01"
                     min="0"
                     className="input"
+                    placeholder="100.00"
                   />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                    Precio de Venta <span style={{ color: '#ef4444' }}>*</span>
+                    Margen de Ganancia (%) <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
                     type="number"
-                    name="precio_venta"
-                    value={formData.precio_venta}
+                    name="margen_porcentaje"
+                    value={formData.margen_porcentaje}
                     onChange={handleChange}
                     required
                     step="0.01"
                     min="0"
                     className="input"
+                    placeholder="25"
                   />
                 </div>
               </div>
 
-              {/* Margen de ganancia */}
-              {formData.precio_costo > 0 && formData.precio_venta > 0 && (
+              {/* ✅ MOSTRAR PRECIO DE VENTA CALCULADO */}
+              {formData.precio_costo > 0 && formData.margen_porcentaje >= 0 && (
                 <div style={{
-                  backgroundColor: margenGanancia > 0 ? '#d1fae5' : '#fee2e2',
-                  padding: '0.75rem',
+                  backgroundColor: '#eff6ff',
+                  padding: '1rem',
                   borderRadius: '0.5rem',
-                  border: `2px solid ${margenGanancia > 0 ? '#86efac' : '#fca5a5'}`
+                  border: '2px solid #3b82f6'
                 }}>
-                  <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                    Margen de Ganancia: <span style={{ fontSize: '1.125rem' }}>{margenGanancia}%</span>
-                  </p>
-                  <p style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                    Ganancia por unidad: ${(formData.precio_venta - formData.precio_costo).toFixed(2)}
-                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e40af' }}>
+                      Precio de Venta (calculado):
+                    </p>
+                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e40af' }}>
+                      ${precioVentaCalculado}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#3b82f6' }}>
+                    <span>Ganancia por unidad:</span>
+                    <span style={{ fontWeight: 600 }}>${gananciaPorUnidad}</span>
+                  </div>
                 </div>
               )}
 

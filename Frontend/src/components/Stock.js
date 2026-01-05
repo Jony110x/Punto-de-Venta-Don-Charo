@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Edit2, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
-import { getProductos, getCategorias, createProducto, updateProducto, deleteProducto } from '../api/api';
+import { Plus, Edit2, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, AlertTriangle, TrendingUp } from 'lucide-react';
+import { getProductos, getCategorias, createProducto, updateProducto, deleteProducto, actualizarPreciosMasivo, getProductosIdsFiltrados } from '../api/api';
 import ProductoForm from './ProductoForm';
 import { useToast } from '../Toast';
 
@@ -36,6 +36,12 @@ const Stock = () => {
   const inputCategoriaFiltroRef = useRef(null);
   const sugerenciasFiltroRef = useRef(null);
   
+  // Estados para actualización masiva
+  const [productosSeleccionados, setProductosSeleccionados] = useState([]);
+  const [showModalActualizacionMasiva, setShowModalActualizacionMasiva] = useState(false);
+  const [porcentajeAumento, setPorcentajeAumento] = useState('');
+  const [aplicandoActualizacion, setAplicandoActualizacion] = useState(false);
+  
   // Refs para control de peticiones y scroll infinito
   const observerRef = useRef();
   const debounceTimerRef = useRef(null);
@@ -44,7 +50,8 @@ const Stock = () => {
 
   // Anchos fijos de columnas para tabla
   const COLUMN_WIDTHS = {
-    producto: '25%',
+    checkbox: '3%',
+    producto: '22%',
     categoria: '12%',
     precioCosto: '10%',
     precioVenta: '10%',
@@ -54,7 +61,7 @@ const Stock = () => {
     acciones: '15%'
   };
 
-  // Debounce para búsqueda - evita llamadas excesivas al API
+  // Debounce para búsqueda
   useEffect(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -95,6 +102,7 @@ const Stock = () => {
     setProductos([]);
     setSkip(0);
     setHasMore(true);
+    setProductosSeleccionados([]); // Limpiar selección al cambiar filtros
     
     cargarProductos(0, true);
 
@@ -133,7 +141,7 @@ const Stock = () => {
     setMostrarSugerenciasFiltro(false);
   };
 
-  // Filtrar categorías según input del usuario
+  // Filtrar categorías según input
   const categoriasFiltradas = categorias.filter(cat => {
     if (!categoriaInputFiltro.trim()) return true;
     if (cat === 'todas') return 'todas las categorías'.includes(categoriaInputFiltro.toLowerCase());
@@ -144,7 +152,7 @@ const Stock = () => {
     return a.localeCompare(b, 'es', { sensitivity: 'base' });
   });
 
-  // Cerrar dropdown de categorías al hacer click fuera
+  // Cerrar dropdown de categorías
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -167,7 +175,6 @@ const Stock = () => {
     
     if (!hasMore && !reset) return;
     
-    // ID único para cada petición - evita condiciones de carrera
     requestIdRef.current += 1;
     const thisRequestId = requestIdRef.current;
     
@@ -190,7 +197,6 @@ const Stock = () => {
 
       const response = await getProductos(params);
       
-      // Verificar si esta sigue siendo la petición más reciente
       if (thisRequestId !== requestIdRef.current) {
         return;
       }
@@ -289,7 +295,122 @@ const Stock = () => {
     }
   };
 
-  // Determinar estado del stock según niveles
+  // Funciones de selección múltiple
+  const toggleSeleccionarProducto = (productoId) => {
+    setProductosSeleccionados(prev => {
+      if (prev.includes(productoId)) {
+        return prev.filter(id => id !== productoId);
+      } else {
+        return [...prev, productoId];
+      }
+    });
+  };
+
+  // Nuevo estado para tracking
+const [seleccionandoTodos, setSeleccionandoTodos] = useState(false);
+
+// Función mejorada para seleccionar todos
+const toggleSeleccionarTodos = async () => {
+  // Si ya hay productos seleccionados, deseleccionar todos
+  if (productosSeleccionados.length > 0) {
+    setProductosSeleccionados([]);
+    return;
+  }
+
+  // Seleccionar todos los productos filtrados
+  try {
+    setSeleccionandoTodos(true);
+    
+    const params = {
+      ...(busquedaDebounced && { busqueda: busquedaDebounced }),
+      ...(filtroCategoria !== 'todas' && { categoria: filtroCategoria }),
+      ...(filtroEstado !== 'todos' && { estado_stock: filtroEstado })
+    };
+
+    const response = await getProductosIdsFiltrados(params);
+    setProductosSeleccionados(response.data);
+    
+    toast.success(`${response.data.length} productos seleccionados`);
+  } catch (error) {
+    console.error('Error seleccionando todos los productos:', error);
+    toast.error('Error al seleccionar productos');
+  } finally {
+    setSeleccionandoTodos(false);
+  }
+};
+
+
+  // Abrir modal de actualización masiva
+  const abrirModalActualizacionMasiva = () => {
+    if (productosSeleccionados.length === 0) {
+      toast.warning('Debe seleccionar al menos un producto');
+      return;
+    }
+    setPorcentajeAumento('');
+    setShowModalActualizacionMasiva(true);
+  };
+
+  // Aplicar actualización masiva
+  const aplicarActualizacionMasiva = async () => {
+    const porcentaje = parseFloat(porcentajeAumento);
+    
+    if (isNaN(porcentaje)) {
+      toast.error('Ingrese un porcentaje válido');
+      return;
+    }
+
+    if (porcentaje < -50) {
+      toast.error('El porcentaje no puede ser menor a -50%');
+      return;
+    }
+
+    if (porcentaje > 200) {
+      toast.error('El porcentaje no puede ser mayor a 200%');
+      return;
+    }
+
+    try {
+      setAplicandoActualizacion(true);
+      
+      const response = await actualizarPreciosMasivo({
+        producto_ids: productosSeleccionados,
+        porcentaje_aumento: porcentaje
+      });
+
+      toast.success(response.data.message);
+      setShowModalActualizacionMasiva(false);
+      setProductosSeleccionados([]);
+      setPorcentajeAumento('');
+      
+      // Recargar productos
+      setProductos([]);
+      setSkip(0);
+      setHasMore(true);
+      cargarProductos(0, true);
+
+    } catch (error) {
+      console.error('Error en actualización masiva:', error);
+      toast.error(error.response?.data?.detail || 'Error al actualizar productos');
+    } finally {
+      setAplicandoActualizacion(false);
+    }
+  };
+
+  // Calcular preview de cambios
+  const productosConCambios = productos
+    .filter(p => productosSeleccionados.includes(p.id))
+    .map(p => {
+      const porcentaje = parseFloat(porcentajeAumento) || 0;
+      const nuevoPrecioCosto = p.precio_costo * (1 + porcentaje / 100);
+      const nuevoPrecioVenta = nuevoPrecioCosto * (1 + p.margen_porcentaje / 100);
+      
+      return {
+        ...p,
+        nuevo_precio_costo: nuevoPrecioCosto,
+        nuevo_precio_venta: nuevoPrecioVenta
+      };
+    });
+
   const getEstadoStock = (producto) => {
     if (producto.stock < 10) return { text: 'Crítico', color: '#fee2e2', textColor: '#991b1b' };
     if (producto.stock < producto.stock_minimo) return { text: 'Bajo', color: '#fef3c7', textColor: '#92400e' };
@@ -307,12 +428,22 @@ const Stock = () => {
     setProductos([]);
     setSkip(0);
     setHasMore(true);
+    setProductosSeleccionados([]);
     cargarProductos(0, true);
   };
 
-  // Componente skeleton para estado de carga
+  // Componente skeleton
   const SkeletonRow = () => (
     <tr style={{ borderTop: '1px solid #e5e7eb' }}>
+      <td style={{ padding: '0.75rem', width: COLUMN_WIDTHS.checkbox }}>
+        <div style={{ 
+          width: '16px',
+          height: '16px',
+          backgroundColor: '#e5e7eb', 
+          borderRadius: '0.25rem',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </td>
       <td style={{ padding: '0.75rem', width: COLUMN_WIDTHS.producto }}>
         <div style={{ 
           height: '1rem', 
@@ -447,7 +578,7 @@ const Stock = () => {
         flexShrink: 0,
         transition: 'padding 0.3s ease'
       }}>
-        {/* Header con título y botones */}
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: filtrosColapsados ? 0 : '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>Control de Stock</h2>
@@ -472,7 +603,32 @@ const Stock = () => {
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <span style={{ fontSize: '0.875rem', color: '#6b7280', marginRight: '0.5rem' }}>
               {productos.length} de {total} productos
+              {productosSeleccionados.length > 0 && (
+                <span style={{ color: '#3b82f6', fontWeight: 600, marginLeft: '0.5rem' }}>
+                  ({productosSeleccionados.length} seleccionados)
+                </span>
+              )}
             </span>
+            
+            {/* Botón Actualización Masiva */}
+            {productosSeleccionados.length > 0 && (
+              <button 
+                onClick={abrirModalActualizacionMasiva}
+                className="btn" 
+                style={{ 
+                  backgroundColor: '#8b5cf6', 
+                  color: 'white', 
+                  padding: '0.5rem 0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <TrendingUp size={16} />
+                Actualizar Precios
+              </button>
+            )}
+            
             <button onClick={handleRefresh} className="btn" style={{ backgroundColor: '#6b7280', color: 'white', padding: '0.5rem 0.75rem' }}>
               <RefreshCw size={16} style={{ marginRight: '0.5rem' }} />
               Actualizar
@@ -511,7 +667,7 @@ const Stock = () => {
               </div>
             </div>
 
-            {/* Filtro por categoría con autocompletado */}
+            {/* Filtro por categoría */}
             <div style={{ position: 'relative' }}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
                 Categoría
@@ -532,7 +688,6 @@ const Stock = () => {
                 autoComplete="off"
               />
               
-              {/* Dropdown de sugerencias */}
               {mostrarSugerenciasFiltro && (
                 <div
                   ref={sugerenciasFiltroRef}
@@ -597,7 +752,7 @@ const Stock = () => {
               )}
             </div>
 
-            {/* Filtro por estado de stock */}
+            {/* Filtro por estado */}
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
                 Estado de Stock
@@ -615,7 +770,7 @@ const Stock = () => {
               </select>
             </div>
 
-            {/* Botón limpiar filtros */}
+            {/* Botón limpiar */}
             <div>
               <button
                 onClick={limpiarFiltros}
@@ -671,6 +826,26 @@ const Stock = () => {
               zIndex: 10
             }}>
               <tr>
+                <th style={{ padding: '0.75rem', textAlign: 'left', width: COLUMN_WIDTHS.checkbox }}>
+  <input
+    type="checkbox"
+    checked={productosSeleccionados.length > 0 && productosSeleccionados.length === total}
+    ref={input => {
+      if (input) {
+        input.indeterminate = productosSeleccionados.length > 0 && productosSeleccionados.length < total;
+      }
+    }}
+    onChange={toggleSeleccionarTodos}
+    disabled={seleccionandoTodos}
+    style={{ 
+      cursor: seleccionandoTodos ? 'wait' : 'pointer', 
+      width: '16px', 
+      height: '16px',
+      opacity: seleccionandoTodos ? 0.5 : 1
+    }}
+    title={seleccionandoTodos ? "Seleccionando..." : "Seleccionar todos los filtrados"}
+  />
+</th>
                 <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: COLUMN_WIDTHS.producto }}>Producto</th>
                 <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: COLUMN_WIDTHS.categoria }}>Categoría</th>
                 <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: COLUMN_WIDTHS.precioCosto }}>P. Costo</th>
@@ -691,18 +866,27 @@ const Stock = () => {
               ) : (
                 productos.map((producto, index) => {
                   const estado = getEstadoStock(producto);
-                  const margen = producto.precio_costo > 0 
-                    ? (((producto.precio_venta - producto.precio_costo) / producto.precio_costo) * 100).toFixed(1)
-                    : 0;
-                  
+                  const margen = producto.margen_porcentaje?.toFixed(1) || '0.0';
                   const isLast = index === productos.length - 1;
+                  const isSelected = productosSeleccionados.includes(producto.id);
                   
                   return (
                     <tr 
                       key={producto.id} 
                       ref={isLast ? lastProductRef : null}
-                      style={{ borderTop: '1px solid #e5e7eb' }}
+                      style={{ 
+                        borderTop: '1px solid #e5e7eb',
+                        backgroundColor: isSelected ? '#eff6ff' : 'white'
+                      }}
                     >
+                      <td style={{ padding: '0.75rem', width: COLUMN_WIDTHS.checkbox }}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSeleccionarProducto(producto.id)}
+                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                        />
+                      </td>
                       <td style={{ padding: '0.75rem', width: COLUMN_WIDTHS.producto }}>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{producto.nombre}</div>
@@ -790,7 +974,6 @@ const Stock = () => {
           </table>
         )}
         
-        {/* Indicador de carga al cargar más */}
         {loadingMore && (
           <div style={{ 
             padding: '1rem', 
@@ -801,7 +984,6 @@ const Stock = () => {
           </div>
         )}
         
-        {/* Mensaje cuando se cargaron todos */}
         {!hasMore && productos.length > 0 && (
           <div style={{ 
             padding: '1rem', 
@@ -813,6 +995,183 @@ const Stock = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de Actualización Masiva */}
+      {showModalActualizacionMasiva && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '0.75rem',
+            padding: '1.5rem',
+            maxWidth: '700px',
+            width: '90%',
+            maxHeight: '80vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            animation: 'slideIn 0.2s ease-out'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{
+                backgroundColor: '#eff6ff',
+                padding: '0.75rem',
+                borderRadius: '50%',
+                marginRight: '1rem'
+              }}>
+                <TrendingUp size={24} style={{ color: '#3b82f6' }} />
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0, color: '#111827' }}>
+                Actualización Masiva de Precios
+              </h3>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                {productosSeleccionados.length} producto{productosSeleccionados.length !== 1 ? 's' : ''} seleccionado{productosSeleccionados.length !== 1 ? 's' : ''}
+              </p>
+              
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>
+                  Porcentaje de Aumento (%)
+                </label>
+                <input
+                  type="number"
+                  value={porcentajeAumento}
+                  onChange={(e) => setPorcentajeAumento(e.target.value)}
+                  placeholder="Ej: 10 para aumentar 10%"
+                  step="0.01"
+                  className="input"
+                  style={{ width: '100%' }}
+                  autoFocus
+                />
+                <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                  Valores negativos reducen el precio (mínimo -50%, máximo 200%)
+                </p>
+              </div>
+            </div>
+
+            {/* Preview de cambios */}
+{porcentajeAumento && !isNaN(parseFloat(porcentajeAumento)) && (
+  <div style={{
+    flex: 1,
+    overflowY: 'auto',
+    backgroundColor: '#f9fafb',
+    padding: '1rem',
+    borderRadius: '0.5rem',
+    border: '1px solid #e5e7eb',
+    marginBottom: '1rem',
+    maxHeight: '400px' 
+  }}>
+    <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#374151' }}>
+      Preview de cambios:
+    </h4>
+    <table style={{ width: '100%', fontSize: '0.8125rem' }}>
+      <thead>
+        <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+          <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Producto</th>
+          <th style={{ textAlign: 'right', padding: '0.5rem', color: '#6b7280' }}>P. Costo Actual</th>
+          <th style={{ textAlign: 'right', padding: '0.5rem', color: '#6b7280' }}>P. Costo Nuevo</th>
+          <th style={{ textAlign: 'right', padding: '0.5rem', color: '#6b7280' }}>P. Venta Nuevo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {productosConCambios.slice(0, 50).map((producto, idx) => ( 
+          <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+            <td style={{ padding: '0.5rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {producto.nombre}
+            </td>
+            <td style={{ textAlign: 'right', padding: '0.5rem', color: '#dc2626' }}>
+              ${producto.precio_costo.toFixed(2)}
+            </td>
+            <td style={{ textAlign: 'right', padding: '0.5rem', fontWeight: 600, color: '#3b82f6' }}>
+              ${producto.nuevo_precio_costo.toFixed(2)}
+            </td>
+            <td style={{ textAlign: 'right', padding: '0.5rem', fontWeight: 600, color: '#059669' }}>
+              ${producto.nuevo_precio_venta.toFixed(2)}
+            </td>
+          </tr>
+        ))}
+        {productosConCambios.length > 50 && ( 
+          <tr>
+            <td colSpan="4" style={{ textAlign: 'center', padding: '0.5rem', color: '#6b7280', fontStyle: 'italic' }}>
+              ... y {productosConCambios.length - 20} producto{productosConCambios.length - 20 !== 1 ? 's' : ''} más {/* ✅ TEXTO DINÁMICO */}
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+)}
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowModalActualizacionMasiva(false);
+                  setPorcentajeAumento('');
+                }}
+                disabled={aplicandoActualizacion}
+                style={{
+                  padding: '0.625rem 1.25rem',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  cursor: aplicandoActualizacion ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  transition: 'background-color 0.2s',
+                  opacity: aplicandoActualizacion ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!aplicandoActualizacion) e.currentTarget.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  if (!aplicandoActualizacion) e.currentTarget.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={aplicarActualizacionMasiva}
+                disabled={!porcentajeAumento || isNaN(parseFloat(porcentajeAumento)) || aplicandoActualizacion}
+                style={{
+                  padding: '0.625rem 1.25rem',
+                  backgroundColor: aplicandoActualizacion ? '#9ca3af' : '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  cursor: (!porcentajeAumento || isNaN(parseFloat(porcentajeAumento)) || aplicandoActualizacion) ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  transition: 'background-color 0.2s',
+                  opacity: (!porcentajeAumento || isNaN(parseFloat(porcentajeAumento))) ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (porcentajeAumento && !isNaN(parseFloat(porcentajeAumento)) && !aplicandoActualizacion) {
+                    e.currentTarget.style.backgroundColor = '#2563eb';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!aplicandoActualizacion) e.currentTarget.style.backgroundColor = '#3b82f6';
+                }}
+              >
+                {aplicandoActualizacion ? 'Aplicando...' : 'Confirmar Actualización'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmación de eliminación */}
       {showDeleteModal && productoAEliminar && (
