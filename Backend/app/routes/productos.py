@@ -132,7 +132,7 @@ def obtener_producto(
 def crear_producto(
     producto: schemas.ProductoCreate, 
     db: Session = Depends(get_db),
-    current_user: models.Usuario = Depends(require_role(["admin"]))
+    current_user: models.Usuario = Depends(require_role(["admin", "superadmin"]))
 ):
     # Verificar si el código de barras ya existe
     if producto.codigo_barras:
@@ -156,7 +156,7 @@ def actualizar_producto(
     producto_id: int, 
     producto: schemas.ProductoUpdate, 
     db: Session = Depends(get_db),
-    current_user: models.Usuario = Depends(require_role(["admin"]))
+    current_user: models.Usuario = Depends(require_role(["admin", "superadmin"]))
 ):
     db_producto = db.query(models.Producto).filter(
         models.Producto.id == producto_id
@@ -188,7 +188,7 @@ def actualizar_producto(
 def eliminar_producto(
     producto_id: int, 
     db: Session = Depends(get_db),
-    current_user: models.Usuario = Depends(require_role(["admin"]))
+    current_user: models.Usuario = Depends(require_role(["admin", "superadmin"]))
 ):
     db_producto = db.query(models.Producto).filter(
         models.Producto.id == producto_id
