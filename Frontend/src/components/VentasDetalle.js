@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
@@ -8,7 +9,11 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
-  Loader
+  Loader,
+  DollarSign,
+  ShoppingCart,
+  TrendingUp,
+  CreditCard
 } from 'lucide-react';
 import api from '../api/api';
 
@@ -35,9 +40,27 @@ const VentasDetalle = () => {
   const [ventaExpandida, setVentaExpandida] = useState(null);
   const [estadisticas, setEstadisticas] = useState(null);
   
+  // Estado para detectar tamaño de pantalla
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+  
   const LIMIT = 50;
   const observerRef = useRef();
   const ventasContainerRef = useRef();
+
+  // Detectar cambios en el tamaño de pantalla
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Cargar ventas con paginación
   const cargarVentas = useCallback(async (skipValue = 0, reset = false) => {
@@ -209,6 +232,14 @@ const VentasDetalle = () => {
   // Formatear fecha
   const formatFecha = (fecha) => {
     const date = new Date(fecha);
+    if (isMobile) {
+      return date.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
     return date.toLocaleDateString('es-AR', {
       year: 'numeric',
       month: '2-digit',
@@ -222,49 +253,299 @@ const VentasDetalle = () => {
   const formatMoney = (amount) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'ARS'
+      currency: 'ARS',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount);
+  };
+
+  // Componente de tarjeta de venta para mobile
+  const VentaCard = ({ venta, isLast }) => {
+    const isExpanded = ventaExpandida === venta.id;
+    
+    return (
+      <div
+        ref={isLast ? lastVentaRef : null}
+        style={{
+          backgroundColor: 'white',
+          border: '2px solid #e5e7eb',
+          borderRadius: '0.5rem',
+          overflow: 'hidden',
+          marginBottom: '0.5rem'
+        }}
+      >
+        {/* Header de la venta */}
+        <div
+          onClick={() => toggleExpandir(venta.id)}
+          style={{
+            padding: '0.75rem',
+            cursor: 'pointer',
+            backgroundColor: isExpanded ? '#f3f4f6' : 'white'
+          }}
+        >
+          {/* Primera fila: ID y Total */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '0.75rem'
+          }}>
+            <div style={{ 
+              fontWeight: 'bold', 
+              color: '#1e40af',
+              fontSize: '1rem'
+            }}>
+              Venta #{venta.id}
+            </div>
+            <div style={{ 
+              fontWeight: 'bold', 
+              color: '#10b981', 
+              fontSize: '1.125rem' 
+            }}>
+              {formatMoney(venta.total)}
+            </div>
+          </div>
+
+          {/* Segunda fila: Fecha y Usuario */}
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.5rem',
+            marginBottom: '0.75rem'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.375rem',
+              fontSize: '0.8125rem',
+              color: '#374151'
+            }}>
+              <Calendar size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+              <span style={{ 
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {formatFecha(venta.fecha)}
+              </span>
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.375rem',
+              fontSize: '0.8125rem',
+              color: '#374151'
+            }}>
+              <User size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+              <span style={{ 
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {venta.usuario_nombre_completo || venta.usuario_nombre}
+              </span>
+            </div>
+          </div>
+
+          {/* Tercera fila: Método de pago e items */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span style={{
+              padding: '0.25rem 0.625rem',
+              borderRadius: '9999px',
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              backgroundColor: venta.metodo_pago === 'efectivo' ? '#d1fae5' : '#dbeafe',
+              color: venta.metodo_pago === 'efectivo' ? '#065f46' : '#1e40af',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <CreditCard size={12} />
+              {venta.metodo_pago === 'efectivo' ? 'EFECTIVO -8%' : 'NORMAL'}
+            </span>
+
+            <div style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.8125rem', 
+              color: '#6b7280' 
+            }}>
+              <span>
+                {venta.cantidad_items} item{venta.cantidad_items !== 1 ? 's' : ''}
+              </span>
+              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </div>
+          </div>
+        </div>
+
+        {/* Detalle expandido */}
+        {isExpanded && (
+          <div style={{
+            padding: '0.75rem',
+            borderTop: '1px solid #e5e7eb',
+            backgroundColor: '#f9fafb'
+          }}>
+            <h4 style={{ 
+              fontWeight: 600, 
+              marginBottom: '0.75rem', 
+              color: '#374151',
+              fontSize: '0.875rem'
+            }}>
+              Productos:
+            </h4>
+            
+            {/* Lista de productos en formato compacto */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {venta.items.map((item, idx) => (
+                <div 
+                  key={idx} 
+                  style={{
+                    backgroundColor: 'white',
+                    padding: '0.625rem',
+                    borderRadius: '0.375rem',
+                    border: '1px solid #e5e7eb'
+                  }}
+                >
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    marginBottom: '0.25rem'
+                  }}>
+                    <span style={{ 
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      color: '#374151',
+                      flex: 1
+                    }}>
+                      {item.producto_nombre}
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.875rem',
+                      fontWeight: 'bold',
+                      color: '#10b981',
+                      marginLeft: '0.5rem'
+                    }}>
+                      {formatMoney(item.subtotal)}
+                    </span>
+                  </div>
+                  <div style={{ 
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '0.75rem',
+                    color: '#6b7280'
+                  }}>
+                    <span>Cant: {item.cantidad}</span>
+                    <span>P.Unit: {formatMoney(item.precio_unitario)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {venta.observaciones && (
+              <div style={{ 
+                marginTop: '0.75rem', 
+                padding: '0.625rem', 
+                backgroundColor: '#fef3c7', 
+                borderRadius: '0.375rem' 
+              }}>
+                <span style={{ fontSize: '0.8125rem', color: '#92400e' }}>
+                  <strong>Obs:</strong> {venta.observaciones}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
     <div style={{ 
-      height: 'calc(100vh - 180px)', 
+      height: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 180px)', 
       display: 'flex', 
       flexDirection: 'column',
-      padding: '0.5rem',
+      padding: isMobile ? '0.5rem' : '0.5rem',
       overflow: 'hidden'
     }}>
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          
+          /* Scrollbar personalizado */
+          div[style*="overflow"] {
+            scrollbar-width: thin;
+          }
+          
+          div[style*="overflow"]::-webkit-scrollbar {
+            width: 8px;
+          }
+          
+          div[style*="overflow"]::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+          }
+          
+          div[style*="overflow"]::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+          }
+        `}
+      </style>
+
       {/* Header fijo */}
       <div style={{ 
         display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between', 
-        alignItems: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? '0.75rem' : '0',
         marginBottom: '0.5rem',
         flexShrink: 0
       }}>
-        <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#1e40af' }}>
+        <h1 style={{ 
+          fontSize: isMobile ? '1.5rem' : '1.875rem', 
+          fontWeight: 'bold', 
+          color: '#1e40af',
+          margin: 0
+        }}>
           Detalle de Ventas
         </h1>
         
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: '0.5rem',
+          flexWrap: isMobile ? 'wrap' : 'nowrap'
+        }}>
           <button
             onClick={() => setMostrarFiltros(!mostrarFiltros)}
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '0.5rem',
-              padding: '0.625rem 1rem',
+              padding: isMobile ? '0.625rem' : '0.625rem 1rem',
               backgroundColor: mostrarFiltros ? '#1e40af' : 'white',
               color: mostrarFiltros ? 'white' : '#1e40af',
               border: '2px solid #1e40af',
               borderRadius: '0.5rem',
               cursor: 'pointer',
               fontWeight: 600,
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              flex: isMobile ? '1' : 'none',
+              fontSize: isMobile ? '0.875rem' : '1rem'
             }}
           >
-            <Filter size={18} />
-            Filtros
+            <Filter size={isMobile ? 16 : 18} />
+            {!isMobile && 'Filtros'}
           </button>
           
           <button
@@ -273,26 +554,29 @@ const VentasDetalle = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '0.5rem',
-              padding: '0.625rem 1rem',
+              padding: isMobile ? '0.625rem' : '0.625rem 1rem',
               backgroundColor: exportando ? '#9ca3af' : '#10b981',
               color: 'white',
               border: 'none',
               borderRadius: '0.5rem',
               cursor: exportando || ventas.length === 0 ? 'not-allowed' : 'pointer',
               fontWeight: 600,
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              flex: isMobile ? '1' : 'none',
+              fontSize: isMobile ? '0.875rem' : '1rem'
             }}
           >
             {exportando ? (
               <>
-                <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                Exportando...
+                <Loader size={isMobile ? 16 : 18} style={{ animation: 'spin 1s linear infinite' }} />
+                {isMobile ? 'Exportando' : 'Exportando...'}
               </>
             ) : (
               <>
-                <Download size={18} />
-                Exportar Excel
+                <Download size={isMobile ? 16 : 18} />
+                {isMobile ? 'Excel' : 'Exportar Excel'}
               </>
             )}
           </button>
@@ -303,7 +587,7 @@ const VentasDetalle = () => {
       {mostrarFiltros && (
         <div style={{
           backgroundColor: '#f3f4f6',
-          padding: '0.5rem',
+          padding: isMobile ? '0.75rem' : '0.5rem',
           borderRadius: '0.5rem',
           marginBottom: '0.5rem',
           border: '2px solid #e5e7eb',
@@ -311,12 +595,18 @@ const VentasDetalle = () => {
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '1rem',
-            marginBottom: '0.5rem'
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: isMobile ? '0.75rem' : '1rem',
+            marginBottom: isMobile ? '0.75rem' : '0.5rem'
           }}>
             <div>
-              <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.5rem' }}>
+              <label style={{ 
+                fontSize: '0.875rem', 
+                fontWeight: 600, 
+                color: '#374151', 
+                display: 'block', 
+                marginBottom: '0.5rem' 
+              }}>
                 Fecha Desde
               </label>
               <input
@@ -327,13 +617,25 @@ const VentasDetalle = () => {
                   width: '100%',
                   padding: '0.5rem',
                   border: '1px solid #d1d5db',
-                  borderRadius: '0.375rem'
+                  borderRadius: '0.375rem',
+                  fontSize: isMobile ? '16px' : '0.875rem',
+                  boxSizing: 'border-box',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  appearance: 'none',
+                  maxWidth: '100%'
                 }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.5rem' }}>
+              <label style={{ 
+                fontSize: '0.875rem', 
+                fontWeight: 600, 
+                color: '#374151', 
+                display: 'block', 
+                marginBottom: '0.5rem' 
+              }}>
                 Fecha Hasta
               </label>
               <input
@@ -344,13 +646,25 @@ const VentasDetalle = () => {
                   width: '100%',
                   padding: '0.5rem',
                   border: '1px solid #d1d5db',
-                  borderRadius: '0.375rem'
+                  borderRadius: '0.375rem',
+                  fontSize: isMobile ? '16px' : '0.875rem',
+                  boxSizing: 'border-box',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  appearance: 'none',
+                  maxWidth: '100%'
                 }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.5rem' }}>
+              <label style={{ 
+                fontSize: '0.875rem', 
+                fontWeight: 600, 
+                color: '#374151', 
+                display: 'block', 
+                marginBottom: '0.5rem' 
+              }}>
                 Método de Pago
               </label>
               <select
@@ -360,7 +674,18 @@ const VentasDetalle = () => {
                   width: '100%',
                   padding: '0.5rem',
                   border: '1px solid #d1d5db',
-                  borderRadius: '0.375rem'
+                  borderRadius: '0.375rem',
+                  fontSize: isMobile ? '16px' : '0.875rem',
+                  boxSizing: 'border-box',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  appearance: 'none',
+                  maxWidth: '100%',
+                  backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundSize: '1.25rem',
+                  paddingRight: '2.5rem'
                 }}
               >
                 <option value="">Todos</option>
@@ -370,7 +695,11 @@ const VentasDetalle = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: '0.75rem' 
+          }}>
             <button
               onClick={aplicarFiltros}
               style={{
@@ -378,9 +707,10 @@ const VentasDetalle = () => {
                 backgroundColor: '#1e40af',
                 color: 'white',
                 border: 'none',
-                borderRadius: '0.275rem',
+                borderRadius: '0.375rem',
                 cursor: 'pointer',
-                fontWeight: 600
+                fontWeight: 600,
+                flex: isMobile ? 1 : 'none'
               }}
             >
               Aplicar Filtros
@@ -394,7 +724,8 @@ const VentasDetalle = () => {
                 border: '1px solid #d1d5db',
                 borderRadius: '0.375rem',
                 cursor: 'pointer',
-                fontWeight: 600
+                fontWeight: 600,
+                flex: isMobile ? 1 : 'none'
               }}
             >
               Limpiar
@@ -407,66 +738,110 @@ const VentasDetalle = () => {
       {estadisticas && (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: isMobile ? '0.5rem' : '1rem',
           marginBottom: '0.5rem',
           flexShrink: 0
         }}>
           <div style={{
             backgroundColor: 'white',
-            padding: '1rem',
+            padding: isMobile ? '0.75rem' : '1rem',
             borderRadius: '0.5rem',
             border: '2px solid #e5e7eb'
           }}>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-              Total Ventas
+            <div style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '0.25rem'
+            }}>
+              {isMobile && <ShoppingCart size={14} style={{ color: '#1e40af' }} />}
+              <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', color: '#6b7280' }}>
+                Total Ventas
+              </div>
             </div>
-            <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#1e40af' }}>
+            <div style={{ 
+              fontSize: isMobile ? '1.5rem' : '1.875rem', 
+              fontWeight: 'bold', 
+              color: '#1e40af' 
+            }}>
               {estadisticas.total_ventas}
             </div>
           </div>
 
           <div style={{
             backgroundColor: 'white',
-            padding: '1rem',
+            padding: isMobile ? '0.75rem' : '1rem',
             borderRadius: '0.5rem',
             border: '2px solid #e5e7eb'
           }}>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-              Total Recaudado
+            <div style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '0.25rem'
+            }}>
+              {isMobile && <DollarSign size={14} style={{ color: '#10b981' }} />}
+              <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', color: '#6b7280' }}>
+                Total Recaudado
+              </div>
             </div>
-            <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#10b981' }}>
+            <div style={{ 
+              fontSize: isMobile ? '1.25rem' : '1.875rem', 
+              fontWeight: 'bold', 
+              color: '#10b981' 
+            }}>
               {formatMoney(estadisticas.total_recaudado)}
             </div>
           </div>
 
-          <div style={{
-            backgroundColor: 'white',
-            padding: '1rem',
-            borderRadius: '0.5rem',
-            border: '2px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-              Promedio por Venta
-            </div>
-            <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#f59e0b' }}>
-              {formatMoney(estadisticas.promedio_venta)}
-            </div>
-          </div>
+          {!isMobile && (
+            <>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '1rem',
+                borderRadius: '0.5rem',
+                border: '2px solid #e5e7eb'
+              }}>
+                <div style={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.25rem'
+                }}>
+                  <TrendingUp size={14} style={{ color: '#f59e0b' }} />
+                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                    Promedio por Venta
+                  </div>
+                </div>
+                <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#f59e0b' }}>
+                  {formatMoney(estadisticas.promedio_venta)}
+                </div>
+              </div>
 
-          <div style={{
-            backgroundColor: 'white',
-            padding: '1rem',
-            borderRadius: '0.5rem',
-            border: '2px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-              Efectivo / Normal
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>
-              {estadisticas.ventas_efectivo} / {estadisticas.ventas_normal}
-            </div>
-          </div>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '1rem',
+                borderRadius: '0.5rem',
+                border: '2px solid #e5e7eb'
+              }}>
+                <div style={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.25rem'
+                }}>
+                  <CreditCard size={14} style={{ color: '#8b5cf6' }} />
+                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                    Efectivo / Normal
+                  </div>
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>
+                  {estadisticas.ventas_efectivo} / {estadisticas.ventas_normal}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -476,192 +851,217 @@ const VentasDetalle = () => {
         style={{ 
           flex: 1,
           overflowY: 'auto',
-          paddingRight: '0.5rem'
+          paddingRight: isMobile ? '0' : '0.5rem'
         }}
       >
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <Loader size={48} style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: '#1e40af' }} />
-            <p style={{ marginTop: '1rem', color: '#6b7280' }}>Cargando ventas...</p>
+          <div style={{ textAlign: 'center', padding: isMobile ? '2rem 1rem' : '3rem' }}>
+            <Loader 
+              size={isMobile ? 40 : 48} 
+              style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: '#1e40af' }} 
+            />
+            <p style={{ marginTop: '1rem', color: '#6b7280', fontSize: isMobile ? '0.875rem' : '1rem' }}>
+              Cargando ventas...
+            </p>
           </div>
         ) : ventas.length === 0 ? (
           <div style={{
             textAlign: 'center',
-            padding: '3rem',
+            padding: isMobile ? '2rem 1rem' : '3rem',
             backgroundColor: 'white',
             borderRadius: '0.5rem',
             border: '2px solid #e5e7eb'
           }}>
-            <Search size={48} style={{ margin: '0 auto', color: '#d1d5db' }} />
-            <p style={{ marginTop: '1rem', color: '#6b7280' }}>
+            <Search size={isMobile ? 40 : 48} style={{ margin: '0 auto', color: '#d1d5db' }} />
+            <p style={{ 
+              marginTop: '1rem', 
+              color: '#6b7280',
+              fontSize: isMobile ? '0.875rem' : '1rem'
+            }}>
               No se encontraron ventas con los filtros aplicados
             </p>
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-              {ventas.map((venta, index) => {
-                const isLast = index === ventas.length - 1;
-                const isExpanded = ventaExpandida === venta.id;
+            {isMobile ? (
+              // Vista Mobile: Cards
+              <div>
+                {ventas.map((venta, index) => (
+                  <VentaCard 
+                    key={venta.id} 
+                    venta={venta} 
+                    isLast={index === ventas.length - 1}
+                  />
+                ))}
+              </div>
+            ) : (
+              // Vista Desktop: Lista expandible
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {ventas.map((venta, index) => {
+                  const isLast = index === ventas.length - 1;
+                  const isExpanded = ventaExpandida === venta.id;
 
-                return (
-                  <div
-                    key={venta.id}
-                    ref={isLast ? lastVentaRef : null}
-                    style={{
-                      backgroundColor: 'white',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '0.5rem',
-                      overflow: 'hidden',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {/* Header de la venta */}
+                  return (
                     <div
-                      onClick={() => toggleExpandir(venta.id)}
+                      key={venta.id}
+                      ref={isLast ? lastVentaRef : null}
                       style={{
-                        padding: '0.5rem',
-                        cursor: 'pointer',
-                        display: 'grid',
-                        gridTemplateColumns: '80px 1fr 150px 150px 120px 100px 50px',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        backgroundColor: isExpanded ? '#f3f4f6' : 'white'
+                        backgroundColor: 'white',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '0.5rem',
+                        overflow: 'hidden',
+                        transition: 'all 0.2s'
                       }}
                     >
-                      <div style={{ fontWeight: 'bold', color: '#1e40af' }}>
-                        #{venta.id}
+                      {/* Header de la venta */}
+                      <div
+                        onClick={() => toggleExpandir(venta.id)}
+                        style={{
+                          padding: '0.5rem',
+                          cursor: 'pointer',
+                          display: 'grid',
+                          gridTemplateColumns: '80px 1fr 150px 150px 120px 100px 50px',
+                          alignItems: 'center',
+                          gap: '1rem',
+                          backgroundColor: isExpanded ? '#f3f4f6' : 'white'
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', color: '#1e40af' }}>
+                          #{venta.id}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Calendar size={16} style={{ color: '#6b7280' }} />
+                          <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                            {formatFecha(venta.fecha)}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <User size={16} style={{ color: '#6b7280' }} />
+                          <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                            {venta.usuario_nombre_completo || venta.usuario_nombre}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span style={{
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '9999px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            backgroundColor: venta.metodo_pago === 'efectivo' ? '#d1fae5' : '#dbeafe',
+                            color: venta.metodo_pago === 'efectivo' ? '#065f46' : '#1e40af'
+                          }}>
+                            {venta.metodo_pago === 'efectivo' ? 'EFECTIVO -8%' : 'NORMAL'}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                          {venta.cantidad_items} item{venta.cantidad_items !== 1 ? 's' : ''}
+                        </div>
+
+                        <div style={{ fontWeight: 'bold', color: '#10b981', fontSize: '1.125rem' }}>
+                          {formatMoney(venta.total)}
+                        </div>
+
+                        <div>
+                          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </div>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Calendar size={16} style={{ color: '#6b7280' }} />
-                        <span style={{ fontSize: '0.875rem', color: '#374151' }}>
-                          {formatFecha(venta.fecha)}
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <User size={16} style={{ color: '#6b7280' }} />
-                        <span style={{ fontSize: '0.875rem', color: '#374151' }}>
-                          {venta.usuario_nombre_completo || venta.usuario_nombre}
-                        </span>
-                      </div>
-
-                      <div>
-                        <span style={{
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '9999px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          backgroundColor: venta.metodo_pago === 'efectivo' ? '#d1fae5' : '#dbeafe',
-                          color: venta.metodo_pago === 'efectivo' ? '#065f46' : '#1e40af'
+                      {/* Detalle expandido */}
+                      {isExpanded && (
+                        <div style={{
+                          padding: '1rem',
+                          borderTop: '1px solid #e5e7eb',
+                          backgroundColor: '#f9fafb'
                         }}>
-                          {venta.metodo_pago === 'efectivo' ? 'EFECTIVO -8%' : 'NORMAL'}
-                        </span>
-                      </div>
-
-                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                        {venta.cantidad_items} item{venta.cantidad_items !== 1 ? 's' : ''}
-                      </div>
-
-                      <div style={{ fontWeight: 'bold', color: '#10b981', fontSize: '1.125rem' }}>
-                        {formatMoney(venta.total)}
-                      </div>
-
-                      <div>
-                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                      </div>
-                    </div>
-
-                    {/* Detalle expandido */}
-                    {isExpanded && (
-                      <div style={{
-                        padding: '1rem',
-                        borderTop: '1px solid #e5e7eb',
-                        backgroundColor: '#f9fafb'
-                      }}>
-                        <h4 style={{ fontWeight: 600, marginBottom: '0.75rem', color: '#374151' }}>
-                          Productos:
-                        </h4>
-                        
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                          <thead>
-                            <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                              <th style={{ textAlign: 'left', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                                Producto
-                              </th>
-                              <th style={{ textAlign: 'center', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                                Cantidad
-                              </th>
-                              <th style={{ textAlign: 'right', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                                Precio Unit.
-                              </th>
-                              <th style={{ textAlign: 'right', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                                Subtotal
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {venta.items.map((item, idx) => (
-                              <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
-                                  {item.producto_nombre}
-                                </td>
-                                <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'center' }}>
-                                  {item.cantidad}
-                                </td>
-                                <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'right' }}>
-                                  {formatMoney(item.precio_unitario)}
-                                </td>
-                                <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'right', fontWeight: 600 }}>
-                                  {formatMoney(item.subtotal)}
-                                </td>
+                          <h4 style={{ fontWeight: 600, marginBottom: '0.75rem', color: '#374151' }}>
+                            Productos:
+                          </h4>
+                          
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                                <th style={{ textAlign: 'left', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                                  Producto
+                                </th>
+                                <th style={{ textAlign: 'center', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                                  Cantidad
+                                </th>
+                                <th style={{ textAlign: 'right', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                                  Precio Unit.
+                                </th>
+                                <th style={{ textAlign: 'right', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                                  Subtotal
+                                </th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {venta.items.map((item, idx) => (
+                                <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
+                                    {item.producto_nombre}
+                                  </td>
+                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'center' }}>
+                                    {item.cantidad}
+                                  </td>
+                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'right' }}>
+                                    {formatMoney(item.precio_unitario)}
+                                  </td>
+                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'right', fontWeight: 600 }}>
+                                    {formatMoney(item.subtotal)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
 
-                        {venta.observaciones && (
-                          <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: '#fef3c7', borderRadius: '0.375rem' }}>
-                            <span style={{ fontSize: '0.875rem', color: '#92400e' }}>
-                              <strong>Observaciones:</strong> {venta.observaciones}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                          {venta.observaciones && (
+                            <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: '#fef3c7', borderRadius: '0.375rem' }}>
+                              <span style={{ fontSize: '0.875rem', color: '#92400e' }}>
+                                <strong>Observaciones:</strong> {venta.observaciones}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {loadingMore && (
-              <div style={{ textAlign: 'center', padding: '2rem' }}>
-                <Loader size={32} style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: '#1e40af' }} />
-                <p style={{ marginTop: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
+              <div style={{ textAlign: 'center', padding: isMobile ? '1.5rem' : '2rem' }}>
+                <Loader 
+                  size={isMobile ? 28 : 32} 
+                  style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: '#1e40af' }} 
+                />
+                <p style={{ 
+                  marginTop: '0.5rem', 
+                  color: '#6b7280', 
+                  fontSize: isMobile ? '0.8125rem' : '0.875rem'
+                }}>
                   Cargando más ventas...
                 </p>
               </div>
             )}
 
             {!hasMore && ventas.length > 0 && (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+              <div style={{ 
+                textAlign: 'center', 
+                padding: isMobile ? '1.5rem' : '2rem', 
+                color: '#6b7280',
+                fontSize: isMobile ? '0.875rem' : '1rem'
+              }}>
                 Todas las ventas cargadas ({total} total)
               </div>
             )}
           </>
         )}
       </div>
-
-      {/* Animación de spinner */}
-      <style>
-        {`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}
-      </style>
     </div>
   );
 };
