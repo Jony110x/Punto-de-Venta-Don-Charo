@@ -34,7 +34,7 @@ const Dashboard = () => {
   const [loadingMoreCritico, setLoadingMoreCritico] = useState(false);
   const LIMIT_CRITICO = 20;
   
-  // Estados de colapso - Mutuamente exclusivos - Crítico expandido por defecto
+  // Estados de colapso - Crítico expandido por defecto
   const [criticoColapsado, setCriticoColapsado] = useState(false);
   const [bajoColapsado, setBajoColapsado] = useState(true);
   
@@ -46,14 +46,12 @@ const Dashboard = () => {
     cargarDatos();
   }, []);
 
-  // Carga inicial de estadísticas y productos con stock bajo/crítico
   const cargarDatos = async () => {
     try {
       setLoading(true);
       const dashboardRes = await getDashboardHoy();
       setStats(dashboardRes.data);
       
-      // Cargar ambos tipos de stock en paralelo
       await Promise.allSettled([
         cargarStockBajo(0, true),
         cargarStockCritico(0, true)
@@ -73,7 +71,6 @@ const Dashboard = () => {
     }
   };
 
-  // Carga productos con stock bajo con paginación
   const cargarStockBajo = async (skipValue, reset = false) => {
     const currentSkip = skipValue !== undefined ? skipValue : skipBajo;
 
@@ -100,7 +97,6 @@ const Dashboard = () => {
       setTotalBajo(total || 0);
       setHasMoreBajo(has_more || false);
       
-      // Toast solo en carga inicial
       if (reset && total > 0) {
         const mensaje = total === 1 
           ? '1 producto con stock bajo'
@@ -110,13 +106,11 @@ const Dashboard = () => {
       
     } catch (error) {
       console.error('Error cargando stock bajo:', error);
-      console.error('Error details:', error.response?.data);
     } finally {
       setLoadingMoreBajo(false);
     }
   };
 
-  // Carga productos con stock crítico con paginación
   const cargarStockCritico = async (skipValue, reset = false) => {
     const currentSkip = skipValue !== undefined ? skipValue : skipCritico;
     
@@ -143,7 +137,6 @@ const Dashboard = () => {
       setTotalCritico(total || 0);
       setHasMoreCritico(has_more || false);
       
-      // Toast solo en carga inicial
       if (reset && total > 0) {
         const mensaje = total === 1 
           ? '1 producto en stock CRÍTICO'
@@ -153,13 +146,11 @@ const Dashboard = () => {
       
     } catch (error) {
       console.error('Error cargando stock crítico:', error);
-      console.error('Error details:', error.response?.data);
     } finally {
       setLoadingMoreCritico(false);
     }
   };
 
-  // Alterna visibilidad de sección crítica (al expandir, colapsa stock bajo)
   const toggleCritico = () => {
     if (criticoColapsado) {
       setBajoColapsado(true);
@@ -167,7 +158,6 @@ const Dashboard = () => {
     setCriticoColapsado(!criticoColapsado);
   };
 
-  // Alterna visibilidad de sección bajo (al expandir, colapsa stock crítico)
   const toggleBajo = () => {
     if (bajoColapsado) {
       setCriticoColapsado(true);
@@ -175,7 +165,6 @@ const Dashboard = () => {
     setBajoColapsado(!bajoColapsado);
   };
 
-  // Intersection Observer para scroll infinito de stock bajo
   const lastProductBajoRef = useCallback(node => {
     if (loading || loadingMoreBajo) return;
     if (observerBajoRef.current) observerBajoRef.current.disconnect();
@@ -189,7 +178,6 @@ const Dashboard = () => {
     if (node) observerBajoRef.current.observe(node);
   }, [loading, loadingMoreBajo, hasMoreBajo, skipBajo]);
 
-  // Intersection Observer para scroll infinito de stock crítico
   const lastProductCriticoRef = useCallback(node => {
     if (loading || loadingMoreCritico) return;
     if (observerCriticoRef.current) observerCriticoRef.current.disconnect();
@@ -203,16 +191,16 @@ const Dashboard = () => {
     if (node) observerCriticoRef.current.observe(node);
   }, [loading, loadingMoreCritico, hasMoreCritico, skipCritico]);
 
-  // Componente skeleton para tarjetas de estadísticas
+  // Skeleton para tarjetas
   const StatCardSkeleton = () => (
     <div style={{
       backgroundColor: '#f3f4f6',
-      padding: '1.25rem',
+      padding: 'clamp(0.75rem, 2vw, 1.25rem)',
       borderRadius: '0.5rem',
       border: '2px solid #e5e7eb'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ 
             height: '0.875rem',
             width: '60%',
@@ -222,7 +210,7 @@ const Dashboard = () => {
             animation: 'pulse 1.5s ease-in-out infinite'
           }} />
           <div style={{ 
-            height: '1.75rem',
+            height: 'clamp(1.25rem, 4vw, 1.75rem)',
             width: '80%',
             backgroundColor: '#e5e7eb',
             borderRadius: '0.25rem',
@@ -230,53 +218,56 @@ const Dashboard = () => {
           }} />
         </div>
         <div style={{ 
-          width: '44px',
-          height: '44px',
+          width: 'clamp(32px, 8vw, 44px)',
+          height: 'clamp(32px, 8vw, 44px)',
           backgroundColor: '#e5e7eb',
           borderRadius: '0.375rem',
-          animation: 'pulse 1.5s ease-in-out infinite'
+          animation: 'pulse 1.5s ease-in-out infinite',
+          flexShrink: 0
         }} />
       </div>
     </div>
   );
 
-  // Componente skeleton para items de producto
+  // Skeleton para productos
   const ProductoSkeleton = () => (
     <div style={{
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '0.75rem',
+      padding: 'clamp(0.5rem, 2vw, 0.75rem)',
       backgroundColor: '#f9fafb',
       borderRadius: '0.375rem',
-      border: '1px solid #e5e7eb'
+      border: '1px solid #e5e7eb',
+      gap: '0.5rem'
     }}>
       <div style={{ 
         height: '1rem',
-        width: '60%',
+        flex: 1,
         backgroundColor: '#e5e7eb',
         borderRadius: '0.25rem',
         animation: 'pulse 1.5s ease-in-out infinite'
       }} />
       <div style={{ 
         height: '1.5rem',
-        width: '25%',
+        width: 'clamp(60px, 25%, 100px)',
         backgroundColor: '#e5e7eb',
         borderRadius: '0.25rem',
-        animation: 'pulse 1.5s ease-in-out infinite'
+        animation: 'pulse 1.5s ease-in-out infinite',
+        flexShrink: 0
       }} />
     </div>
   );
 
   return (
     <div style={{ 
-      padding: '1.25rem',
+      padding: 'clamp(0.5rem, 2vw, 1.25rem)',
       height: 'calc(100vh - 140px)', 
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden'
     }}>
-      {/* Animación de pulso para skeletons */}
+      {/* Estilos CSS */}
       <style>
         {`
           @keyframes pulse {
@@ -287,19 +278,33 @@ const Dashboard = () => {
               opacity: 0.5;
             }
           }
+          
+          /* Mejorar scroll en móviles */
+          @media (max-width: 768px) {
+            * {
+              -webkit-overflow-scrolling: touch;
+            }
+          }
         `}
       </style>
 
-      <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '1rem', flexShrink: 0 }}>
+      {/* Título */}
+      <h2 style={{ 
+        fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', 
+        fontWeight: 'bold', 
+        marginBottom: 'clamp(0.75rem, 2vw, 1rem)', 
+        flexShrink: 0,
+        lineHeight: 1.2
+      }}>
         Panel de Control - Hoy
       </h2>
 
-      {/* Grid de tarjetas de estadísticas */}
+      {/* Grid de tarjetas de estadísticas - Responsive */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-        gap: '1rem',
-        marginBottom: '1rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+        gap: 'clamp(0.5rem, 2vw, 1rem)',
+        marginBottom: 'clamp(0.75rem, 2vw, 1rem)',
         flexShrink: 0
       }}>
         {loading ? (
@@ -314,80 +319,136 @@ const Dashboard = () => {
             {/* Tarjeta de ganancias */}
             <div style={{
               backgroundColor: '#d1fae5',
-              padding: '1.25rem',
+              padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
               border: '2px solid #86efac'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <p style={{ fontSize: '0.8125rem', color: '#15803d', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ 
+                    fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)', 
+                    color: '#15803d', 
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
                     Ganancias Hoy
                   </p>
-                  <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#166534' }}>
+                  <p style={{ 
+                    fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', 
+                    fontWeight: 'bold', 
+                    color: '#166534',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
                     ${stats.ganancia_hoy.toFixed(2)}
                   </p>
                 </div>
-                <TrendingUp size={44} style={{ color: '#22c55e' }} />
+                <TrendingUp size={window.innerWidth < 640 ? 32 : 44} style={{ color: '#22c55e', flexShrink: 0 }} />
               </div>
             </div>
 
             {/* Tarjeta de ventas */}
             <div style={{
               backgroundColor: '#dbeafe',
-              padding: '1.25rem',
+              padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
               border: '2px solid #93c5fd'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <p style={{ fontSize: '0.8125rem', color: '#1e40af', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ 
+                    fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)', 
+                    color: '#1e40af', 
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
                     Ventas Hoy
                   </p>
-                  <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e3a8a' }}>
+                  <p style={{ 
+                    fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', 
+                    fontWeight: 'bold', 
+                    color: '#1e3a8a',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
                     ${stats.ventas_hoy.toFixed(2)}
                   </p>
                 </div>
-                <DollarSign size={44} style={{ color: '#3b82f6' }} />
+                <DollarSign size={window.innerWidth < 640 ? 32 : 44} style={{ color: '#3b82f6', flexShrink: 0 }} />
               </div>
             </div>
 
             {/* Tarjeta de productos vendidos */}
             <div style={{
               backgroundColor: '#fce7f3',
-              padding: '1.25rem',
+              padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
               border: '2px solid #fbcfe8'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <p style={{ fontSize: '0.8125rem', color: '#9f1239', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ 
+                    fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)', 
+                    color: '#9f1239', 
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
                     Productos Vendidos
                   </p>
-                  <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#881337' }}>
+                  <p style={{ 
+                    fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', 
+                    fontWeight: 'bold', 
+                    color: '#881337',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
                     {stats.productos_vendidos_hoy}
                   </p>
                 </div>
-                <Package size={44} style={{ color: '#ec4899' }} />
+                <Package size={window.innerWidth < 640 ? 32 : 44} style={{ color: '#ec4899', flexShrink: 0 }} />
               </div>
             </div>
 
             {/* Tarjeta de transacciones */}
             <div style={{
               backgroundColor: '#f3e8ff',
-              padding: '1.25rem',
+              padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
               border: '2px solid #d8b4fe'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <p style={{ fontSize: '0.8125rem', color: '#6b21a8', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ 
+                    fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)', 
+                    color: '#6b21a8', 
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
                     Transacciones Hoy
                   </p>
-                  <p style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#581c87' }}>
+                  <p style={{ 
+                    fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', 
+                    fontWeight: 'bold', 
+                    color: '#581c87',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
                     {stats.cantidad_ventas_hoy}
                   </p>
                 </div>
-                <ShoppingCart size={44} style={{ color: '#a855f7' }} />
+                <ShoppingCart size={window.innerWidth < 640 ? 32 : 44} style={{ color: '#a855f7', flexShrink: 0 }} />
               </div>
             </div>
           </>
@@ -400,24 +461,24 @@ const Dashboard = () => {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: criticoColapsado ? 'flex-start' : 'space-between',
-        gap: '1rem',
+        gap: 'clamp(0.5rem, 2vw, 1rem)',
         minHeight: 0,
         overflow: 'hidden'
       }}>
         
         {loading ? (
           <>
-            {/* Skeleton para stock crítico */}
+            {/* Skeletons */}
             <div style={{
               backgroundColor: '#f3f4f6',
-              padding: '1.25rem',
+              padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
               border: '2px solid #e5e7eb',
               flexShrink: 0
             }}>
               <div style={{ 
-                height: '1.5rem',
-                width: '50%',
+                height: 'clamp(1.25rem, 3vw, 1.5rem)',
+                width: '60%',
                 backgroundColor: '#e5e7eb',
                 borderRadius: '0.25rem',
                 marginBottom: '1rem',
@@ -430,17 +491,16 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Skeleton para stock bajo */}
             <div style={{
               backgroundColor: '#f3f4f6',
-              padding: '1.25rem',
+              padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
               border: '2px solid #e5e7eb',
               flexShrink: 0
             }}>
               <div style={{ 
-                height: '1.5rem',
-                width: '50%',
+                height: 'clamp(1.25rem, 3vw, 1.5rem)',
+                width: '60%',
                 backgroundColor: '#e5e7eb',
                 borderRadius: '0.25rem',
                 marginBottom: '1rem',
@@ -480,35 +540,45 @@ const Dashboard = () => {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'space-between',
-                    padding: '1rem 1.25rem',
+                    padding: 'clamp(0.75rem, 2vw, 1rem) clamp(0.75rem, 2vw, 1.25rem)',
                     cursor: 'pointer',
                     userSelect: 'none',
                     transition: 'background-color 0.2s',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    gap: '0.5rem'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fecaca'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <AlertTriangle size={22} style={{ color: '#dc2626' }} />
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#991b1b', margin: 0 }}>
-                      Stock CRÍTICO (menos de 10 unidades)
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+                    <AlertTriangle size={window.innerWidth < 640 ? 18 : 22} style={{ color: '#dc2626', flexShrink: 0 }} />
+                    <h3 style={{ 
+                      fontSize: 'clamp(0.875rem, 3vw, 1.25rem)', 
+                      fontWeight: 'bold', 
+                      color: '#991b1b', 
+                      margin: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap'
+                    }}>
+                      Stock CRÍTICO {window.innerWidth >= 640 && '(menos de 10 unidades)'}
                     </h3>
                     <span style={{
                       backgroundColor: '#dc2626',
                       color: 'white',
                       padding: '0.25rem 0.5rem',
                       borderRadius: '9999px',
-                      fontSize: '0.875rem',
-                      fontWeight: 'bold'
+                      fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+                      fontWeight: 'bold',
+                      flexShrink: 0
                     }}>
                       {totalCritico}
                     </span>
                   </div>
                   {criticoColapsado ? (
-                    <ChevronDown size={24} style={{ color: '#991b1b' }} />
+                    <ChevronDown size={window.innerWidth < 640 ? 20 : 24} style={{ color: '#991b1b', flexShrink: 0 }} />
                   ) : (
-                    <ChevronUp size={24} style={{ color: '#991b1b' }} />
+                    <ChevronUp size={window.innerWidth < 640 ? 20 : 24} style={{ color: '#991b1b', flexShrink: 0 }} />
                   )}
                 </div>
 
@@ -519,12 +589,12 @@ const Dashboard = () => {
                     minHeight: 0,
                     display: 'flex',
                     flexDirection: 'column',
-                    padding: '0 1.25rem 1.25rem 1.25rem'
+                    padding: '0 clamp(0.75rem, 2vw, 1.25rem) clamp(0.75rem, 2vw, 1.25rem) clamp(0.75rem, 2vw, 1.25rem)'
                   }}>
                     <div style={{ 
                       display: 'flex', 
                       flexDirection: 'column', 
-                      gap: '0.5rem',
+                      gap: 'clamp(0.375rem, 1vw, 0.5rem)',
                       flex: 1,
                       overflowY: 'auto',
                       paddingRight: '0.5rem'
@@ -539,20 +609,35 @@ const Dashboard = () => {
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
-                              padding: '0.75rem',
+                              padding: 'clamp(0.5rem, 2vw, 0.75rem)',
                               backgroundColor: '#fff',
                               borderRadius: '0.375rem',
                               border: '2px solid #dc2626',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              gap: '0.5rem',
+                              flexWrap: window.innerWidth < 640 ? 'wrap' : 'nowrap'
                             }}
                           >
-                            <span style={{ fontWeight: 600 }}>{producto.nombre}</span>
+                            <span style={{ 
+                              fontWeight: 600,
+                              fontSize: 'clamp(0.8125rem, 2vw, 0.875rem)',
+                              flex: window.innerWidth < 640 ? '1 1 100%' : '1 1 auto',
+                              minWidth: 0,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap'
+                            }}>
+                              {producto.nombre}
+                            </span>
                             <span style={{ 
                               color: '#dc2626', 
                               fontWeight: 'bold',
                               backgroundColor: '#fee2e2',
                               padding: '0.25rem 0.75rem',
-                              borderRadius: '0.25rem'
+                              borderRadius: '0.25rem',
+                              fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
                             }}>
                               Stock: {producto.stock}
                             </span>
@@ -560,29 +645,27 @@ const Dashboard = () => {
                         );
                       })}
                       
-                      {/* Indicador de carga */}
                       {loadingMoreCritico && (
                         <div style={{ 
-                          padding: '0.75rem', 
+                          padding: 'clamp(0.5rem, 2vw, 0.75rem)', 
                           textAlign: 'center',
                           color: '#991b1b',
-                          fontSize: '0.875rem',
+                          fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                           flexShrink: 0
                         }}>
-                          Cargando más productos...
+                          Cargando más...
                         </div>
                       )}
                       
-                      {/* Mensaje de finalización */}
                       {!hasMoreCritico && (productosStockCritico?.length > 0) && (
                         <div style={{ 
-                          padding: '0.75rem', 
+                          padding: 'clamp(0.5rem, 2vw, 0.75rem)', 
                           textAlign: 'center',
                           color: '#991b1b',
-                          fontSize: '0.875rem',
+                          fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                           flexShrink: 0
                         }}>
-                          Todos los productos críticos cargados
+                          Todos los productos cargados
                         </div>
                       )}
                     </div>
@@ -615,35 +698,44 @@ const Dashboard = () => {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'space-between',
-                    padding: '1rem 1.25rem',
+                    padding: 'clamp(0.75rem, 2vw, 1rem) clamp(0.75rem, 2vw, 1.25rem)',
                     cursor: 'pointer',
                     userSelect: 'none',
                     transition: 'background-color 0.2s',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    gap: '0.5rem'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <AlertTriangle size={22} style={{ color: '#f59e0b' }} />
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
-                      Productos con Stock Bajo
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+                    <AlertTriangle size={window.innerWidth < 640 ? 18 : 22} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                    <h3 style={{ 
+                      fontSize: 'clamp(0.875rem, 3vw, 1.25rem)', 
+                      fontWeight: 'bold', 
+                      margin: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap'
+                    }}>
+                      Stock Bajo
                     </h3>
                     <span style={{
                       backgroundColor: '#f59e0b',
                       color: 'white',
                       padding: '0.25rem 0.5rem',
                       borderRadius: '9999px',
-                      fontSize: '0.875rem',
-                      fontWeight: 'bold'
+                      fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+                      fontWeight: 'bold',
+                      flexShrink: 0
                     }}>
                       {totalBajo}
                     </span>
                   </div>
                   {bajoColapsado ? (
-                    <ChevronDown size={24} style={{ color: '#6b7280' }} />
+                    <ChevronDown size={window.innerWidth < 640 ? 20 : 24} style={{ color: '#6b7280', flexShrink: 0 }} />
                   ) : (
-                    <ChevronUp size={24} style={{ color: '#6b7280' }} />
+                    <ChevronUp size={window.innerWidth < 640 ? 20 : 24} style={{ color: '#6b7280', flexShrink: 0 }} />
                   )}
                 </div>
 
@@ -654,12 +746,12 @@ const Dashboard = () => {
                     minHeight: 0,
                     display: 'flex',
                     flexDirection: 'column',
-                    padding: '0 1.25rem 1.25rem 1.25rem'
+                    padding: '0 clamp(0.75rem, 2vw, 1.25rem) clamp(0.75rem, 2vw, 1.25rem) clamp(0.75rem, 2vw, 1.25rem)'
                   }}>
                     <div style={{ 
                       display: 'flex', 
                       flexDirection: 'column', 
-                      gap: '0.5rem',
+                      gap: 'clamp(0.375rem, 1vw, 0.5rem)',
                       flex: 1,
                       overflowY: 'auto',
                       paddingRight: '0.5rem'
@@ -674,44 +766,60 @@ const Dashboard = () => {
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
-                              padding: '0.75rem',
+                              padding: 'clamp(0.5rem, 2vw, 0.75rem)',
                               backgroundColor: '#fef3c7',
                               borderRadius: '0.375rem',
                               border: '1px solid #fcd34d',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              gap: '0.5rem',
+                              flexWrap: window.innerWidth < 640 ? 'wrap' : 'nowrap'
                             }}
                           >
-                            <span style={{ fontWeight: 600 }}>{producto.nombre}</span>
-                            <span style={{ color: '#92400e', fontWeight: 'bold' }}>
-                              Stock: {producto.stock} / Mínimo: {producto.stock_minimo}
+                            <span style={{ 
+                              fontWeight: 600,
+                              fontSize: 'clamp(0.8125rem, 2vw, 0.875rem)',
+                              flex: window.innerWidth < 640 ? '1 1 100%' : '1 1 auto',
+                              minWidth: 0,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap'
+                            }}>
+                              {producto.nombre}
+                            </span>
+                            <span style={{ 
+                              color: '#92400e', 
+                              fontWeight: 'bold',
+                              fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
+                            }}>
+                              Stock: {producto.stock} / Mín: {producto.stock_minimo}
                             </span>
                           </div>
                         );
                       })}
                       
-                      {/* Indicador de carga */}
                       {loadingMoreBajo && (
                         <div style={{ 
-                          padding: '0.75rem', 
+                          padding: 'clamp(0.5rem, 2vw, 0.75rem)', 
                           textAlign: 'center',
                           color: '#92400e',
-                          fontSize: '0.875rem',
+                          fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                           flexShrink: 0
                         }}>
-                          Cargando más productos...
+                          Cargando más...
                         </div>
                       )}
                       
-                      {/* Mensaje de finalización */}
                       {!hasMoreBajo && (productosStockBajo?.length > 0) && (
                         <div style={{ 
-                          padding: '0.75rem', 
+                          padding: 'clamp(0.5rem, 2vw, 0.75rem)', 
                           textAlign: 'center',
                           color: '#92400e',
-                          fontSize: '0.875rem',
+                          fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                           flexShrink: 0
                         }}>
-                          Todos los productos con stock bajo cargados
+                          Todos los productos cargados
                         </div>
                       )}
                     </div>
@@ -724,14 +832,19 @@ const Dashboard = () => {
             {totalCritico === 0 && totalBajo === 0 && (
               <div style={{
                 backgroundColor: '#d1fae5',
-                padding: '2rem',
+                padding: 'clamp(1rem, 3vw, 2rem)',
                 borderRadius: '0.5rem',
                 border: '2px solid #86efac',
                 textAlign: 'center',
                 flexShrink: 0
               }}>
-                <p style={{ fontSize: '1.125rem', fontWeight: 600, color: '#065f46' }}>
-                  No hay productos con stock bajo o crítico
+                <p style={{ 
+                  fontSize: 'clamp(0.875rem, 3vw, 1.125rem)', 
+                  fontWeight: 600, 
+                  color: '#065f46',
+                  margin: 0
+                }}>
+                  ✅ No hay productos con stock bajo o crítico
                 </p>
               </div>
             )}

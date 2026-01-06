@@ -50,16 +50,16 @@ const Stock = () => {
 
   // Anchos fijos de columnas para tabla
   const COLUMN_WIDTHS = {
-    checkbox: '3%',
-    producto: '22%',
-    categoria: '12%',
-    precioCosto: '10%',
-    precioVenta: '10%',
-    margen: '10%',
-    stock: '8%',
-    estado: '10%',
-    acciones: '15%'
-  };
+  checkbox: '50px',
+  producto: '25%',
+  categoria: '12%',
+  precioCosto: '10%',
+  precioVenta: '10%',
+  margen: '10%',
+  stock: '8%',
+  estado: '10%',
+  acciones: '120px'  
+};
 
   // Debounce para búsqueda
   useEffect(() => {
@@ -546,27 +546,50 @@ const toggleSeleccionarTodos = async () => {
     }}>
       {/* Animaciones CSS */}
       <style>
-        {`
-          @keyframes pulse {
-            0%, 100% {
-              opacity: 1;
-            }
-            50% {
-              opacity: 0.5;
-            }
-          }
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translateY(-20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        `}
-      </style>
+  {`
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    div[style*="overflowY: scroll"] {
+      scrollbar-width: thin; /* Firefox */
+      scrollbar-gutter: stable; /* Reservar espacio para scrollbar */
+    }
+    
+    /* Estilos para WebKit (Chrome, Safari, Edge) */
+    div[style*="overflowY: scroll"]::-webkit-scrollbar {
+      width: 12px;
+    }
+    
+    div[style*="overflowY: scroll"]::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    
+    div[style*="overflowY: scroll"]::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    
+    div[style*="overflowY: scroll"]::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+  `}
+</style>
       
       {/* Panel de filtros */}
       <div style={{
@@ -800,7 +823,7 @@ const toggleSeleccionarTodos = async () => {
         borderRadius: '0.5rem',
         border: '2px solid #e5e7eb',
         flex: 1,
-        overflow: 'auto',
+        overflow: 'scroll',
         minHeight: 0
       }}>
         {productos.length === 0 && !loading ? (
@@ -818,7 +841,7 @@ const toggleSeleccionarTodos = async () => {
             </p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px', tableLayout: 'fixed' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto' }}>
             <thead style={{ 
               backgroundColor: '#f3f4f6',
               position: 'sticky',
