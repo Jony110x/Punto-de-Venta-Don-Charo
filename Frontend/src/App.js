@@ -11,7 +11,9 @@ import {
   Users as UsersIcon,
   Wifi,
   WifiOff,
-  RefreshCw
+  RefreshCw,
+  Menu,
+  X
 } from "lucide-react";
 import Dashboard from "./components/Dashboard";
 import Ventas from "./components/Ventas";
@@ -37,17 +39,16 @@ window.addEventListener('error', e => {
   }
 });
 
-// Banner de estado offline/online
+// Banner de estado offline/online - RESPONSIVE
 const OfflineBanner = () => {
   const { isOnline, isSyncing, ventasPendientes, triggerSync, isLoadingProducts, productosProgress } = useOffline();
 
-  // Solo mostrar banner para CAJERO
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   if (user.rol !== 'CAJERO' && user.rol !== 'cajero') {
-    return null; // ADMIN y SUPERADMIN no ven banner
+    return null;
   }
 
-  // Mostrar banner de carga inicial de productos
+  // Banner de carga de productos
   if (isLoadingProducts) {
     const percentage = productosProgress.total > 0 
       ? Math.round((productosProgress.current / productosProgress.total) * 100)
@@ -62,28 +63,29 @@ const OfflineBanner = () => {
         zIndex: 9999,
         backgroundColor: '#dbeafe',
         color: '#1e40af',
-        padding: '0.75rem',
+        padding: '0.5rem',
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         gap: '0.5rem',
-        fontSize: '0.875rem',
+        fontSize: '0.75rem',
         fontWeight: 600
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <RefreshCw size={18} style={{ animation: 'spin 1s linear infinite' }} />
-          <span>
-            📦 Cargando productos: {productosProgress.current.toLocaleString()} / {productosProgress.total.toLocaleString()} ({percentage}%)
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+          <span style={{ textAlign: 'center' }}>
+            📦 Cargando: {productosProgress.current.toLocaleString()} / {productosProgress.total.toLocaleString()} ({percentage}%)
           </span>
         </div>
-        {/* Barra de progreso */}
+        {/* Barra de progreso responsive */}
         <div style={{
-          width: '300px',
-          height: '8px',
+          width: '90%',
+          maxWidth: '300px',
+          height: '6px',
           backgroundColor: '#e5e7eb',
-          borderRadius: '4px',
+          borderRadius: '3px',
           overflow: 'hidden'
         }}>
           <div style={{
@@ -106,7 +108,7 @@ const OfflineBanner = () => {
   }
 
   if (isOnline && !isSyncing && ventasPendientes === 0) {
-    return null; // No mostrar nada si está online y sincronizado
+    return null;
   }
 
   return (
@@ -118,40 +120,42 @@ const OfflineBanner = () => {
       zIndex: 9999,
       backgroundColor: isOnline ? '#fef3c7' : '#fee2e2',
       color: isOnline ? '#92400e' : '#991b1b',
-      padding: '0.75rem',
+      padding: '0.5rem',
       boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '1rem',
-      fontSize: '0.875rem',
-      fontWeight: 600
+      gap: '0.5rem',
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      flexWrap: 'wrap'
     }}>
       {isSyncing ? (
         <>
-          <RefreshCw size={18} style={{ animation: 'spin 1s linear infinite' }} />
-          <span>Sincronizando datos...</span>
+          <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+          <span>Sincronizando...</span>
         </>
       ) : !isOnline ? (
         <>
-          <WifiOff size={18} />
-          <span> MODO OFFLINE - Las ventas se guardarán localmente</span>
+          <WifiOff size={16} style={{ flexShrink: 0 }} />
+          <span style={{ textAlign: 'center' }}>MODO OFFLINE</span>
           {ventasPendientes > 0 && (
             <span style={{ 
               backgroundColor: '#991b1b', 
               color: 'white', 
               padding: '0.25rem 0.5rem',
               borderRadius: '9999px',
-              fontSize: '0.75rem'
+              fontSize: '0.7rem',
+              flexShrink: 0
             }}>
-              {ventasPendientes} venta{ventasPendientes !== 1 ? 's' : ''} pendiente{ventasPendientes !== 1 ? 's' : ''}
+              {ventasPendientes} pendiente{ventasPendientes !== 1 ? 's' : ''}
             </span>
           )}
         </>
       ) : ventasPendientes > 0 ? (
         <>
-          <Wifi size={18} />
-          <span> {ventasPendientes} venta{ventasPendientes !== 1 ? 's' : ''} pendiente{ventasPendientes !== 1 ? 's' : ''} de sincronizar</span>
+          <Wifi size={16} style={{ flexShrink: 0 }} />
+          <span>{ventasPendientes} pendiente{ventasPendientes !== 1 ? 's' : ''}</span>
           <button
             onClick={triggerSync}
             style={{
@@ -161,15 +165,16 @@ const OfflineBanner = () => {
               border: 'none',
               borderRadius: '0.375rem',
               cursor: 'pointer',
-              fontSize: '0.75rem',
+              fontSize: '0.7rem',
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem'
+              gap: '0.25rem',
+              flexShrink: 0
             }}
           >
-            <RefreshCw size={14} />
-            Sincronizar ahora
+            <RefreshCw size={12} />
+            Sincronizar
           </button>
         </>
       ) : null}
@@ -192,10 +197,10 @@ function AppContent() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isOnline, ventasPendientes, precargarProductos } = useOffline(); 
 
   useEffect(() => {
-    // Verificar si hay sesión guardada
     const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
 
@@ -205,22 +210,20 @@ function AppContent() {
     }
   }, []);
 
-  // precarga productos 
   const handleLoginSuccess = async (userData) => {
     setUser(userData);
     setIsAuthenticated(true);
 
-    // Precargar productos SOLO si es CAJERO
     if (userData.rol === 'CAJERO' || userData.rol === 'cajero') {
       try {
         const result = await precargarProductos();
         if (result.success) {
+          console.log('Productos precargados');
         } else {
           console.log('No se pudieron precargar productos:', result.message);
         }
       } catch (error) {
-        console.error(' Error en precarga:', error);
-        // No es crítico, el sistema puede funcionar sin precarga
+        console.error('Error en precarga:', error);
       }
     } 
   };
@@ -231,30 +234,31 @@ function AppContent() {
     setUser(null);
     setIsAuthenticated(false);
     setVistaActual("dashboard");
+    setMobileMenuOpen(false);
   };
 
   const handleUserUpdate = (updatedUser) => {
     setUser(updatedUser);
   };
 
-  // Si no está autenticado, mostrar login
   if (!isAuthenticated) {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Si es CAJERO, mostrar solo pantalla de ventas SIN navegación
+  // ============================================
+  // VISTA CAJERO - RESPONSIVE
+  // ============================================
   if (user.rol === "cajero" || user.rol === "CAJERO") {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: "#f3f4f6" }}>
-        {/* Banner de estado offline */}
         <OfflineBanner />
         
-        {/* Header simple para cajero */}
+        {/* Header CAJERO - Responsive */}
         <div
           style={{
             background: "linear-gradient(to right, #2563eb, #1e40af)",
             color: "white",
-            padding: "1rem 1.5rem",
+            padding: "0.75rem",
             boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
             marginTop: (!isOnline || ventasPendientes > 0) ? '50px' : '0',
             transition: 'margin-top 0.3s ease'
@@ -267,144 +271,142 @@ function AppContent() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              gap: "0.5rem"
             }}
           >
-            {/* Logo + Título */}
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            {/* Logo + Título - Responsive */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flex: 1, minWidth: 0 }}>
               <img 
                 src="/logos/DonCharoLogo.png" 
-                alt="Don Charo Logo"
+                alt="Don Charo"
                 style={{
-                  height: "50px",
+                  height: "40px",
                   width: "auto",
-                  objectFit: "contain"
+                  objectFit: "contain",
+                  flexShrink: 0
                 }}
               />
-              <div>
-                <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>
-                  Sistema de Ventas - Don Charo
+              <div style={{ minWidth: 0 }}>
+                <h1 style={{ 
+                  fontSize: "clamp(0.9rem, 3vw, 1.5rem)", 
+                  fontWeight: "bold", 
+                  margin: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap"
+                }}>
+                  Don Charo - Ventas
                 </h1>
                 {!isOnline && (
-                  <div style={{ fontSize: "0.75rem", marginTop: "0.25rem", opacity: 0.9 }}>
-                    🔴 Modo Offline
+                  <div style={{ fontSize: "0.7rem", marginTop: "0.25rem", opacity: 0.9 }}>
+                    🔴 Offline
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Botones de acceso rápido + User Info */}
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-              {/* Botón Claro */}
-              <a
-                href="https://clarocomercios.claro.com.ar/main/recargas"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#ef4444",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "0.5rem",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: "0.875rem",
-                  textDecoration: "none",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#dc2626")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#ef4444")
-                }
-              >
-                <img
-                  src="/logos/claro-logo.png" 
-                  alt="Claro"
+            {/* Botones - Responsive */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0, flexWrap: "wrap" }}>
+              {/* Botones Claro y AFIP - Ocultos en móvil pequeño */}
+              <div style={{ 
+                display: "flex", 
+                gap: "0.5rem",
+                '@media (max-width: 640px)': { display: 'none' }
+              }}>
+                <a
+                  href="https://clarocomercios.claro.com.ar/main/recargas"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-claro"
                   style={{
-                    width: "18px",
-                    height: "18px",
-                    objectFit: "contain",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.5rem 0.75rem",
+                    backgroundColor: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.5rem",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    textDecoration: "none",
+                    transition: "background-color 0.2s",
                   }}
-                />
-                <Smartphone size={16} style={{ display: "none" }} />
-                Claro
-              </a>
+                >
+                  <img
+                    src="/logos/claro-logo.png" 
+                    alt="Claro"
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      objectFit: "contain",
+                    }}
+                  />
+                  <span style={{ display: 'none' }}>Claro</span>
+                </a>
 
-              {/* Botón AFIP */}
-              <a
-                href="https://www.afip.gob.ar"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#0891b2",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "0.5rem",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: "0.875rem",
-                  textDecoration: "none",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#0e7490")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#0891b2")
-                }
-              >
-                <img
-                  src="https://www.afip.gob.ar/images/logos/afip-blanco.svg"
-                  alt="AFIP"
+                <a
+                  href="https://www.afip.gob.ar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-afip"
                   style={{
-                    width: "20px",
-                    height: "20px",
-                    filter: "brightness(0) invert(1)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.5rem 0.75rem",
+                    backgroundColor: "#0891b2",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.5rem",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    textDecoration: "none",
+                    transition: "background-color 0.2s",
                   }}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                    e.target.nextElementSibling.style.display = "inline";
-                  }}
-                />
-                <FileText size={16} style={{ display: "none" }} />
-                ARCA
-              </a>
+                >
+                  <img
+                    src="https://www.afip.gob.ar/images/logos/afip-blanco.svg"
+                    alt="AFIP"
+                    style={{
+                      width: "18px",
+                      height: "18px",
+                      filter: "brightness(0) invert(1)",
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextElementSibling.style.display = "inline";
+                    }}
+                  />
+                  <FileText size={14} style={{ display: "none" }} />
+                  <span style={{ display: 'none' }}>ARCA</span>
+                </a>
+              </div>
 
-              {/* User Info - Clickeable */}
+              {/* Botón Usuario */}
               <button
                 onClick={() => setShowUserProfile(true)}
                 style={{
-                  textAlign: "right",
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
-                  padding: "0.5rem 1rem",
+                  padding: "0.5rem",
                   backgroundColor: "rgba(255,255,255,0.1)",
                   color: "white",
                   border: "1px solid rgba(255,255,255,0.2)",
                   borderRadius: "0.5rem",
                   cursor: "pointer",
                   fontWeight: 600,
-                  fontSize: "0.875rem",
+                  fontSize: "0.8rem",
                   transition: "background-color 0.2s",
                 }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")
-                }
               >
                 <UserIcon size={18} />
-                <span>{user.nombre_completo || user.username}</span>
+                <span className="hide-mobile" style={{ display: 'none' }}>
+                  {user.nombre_completo || user.username}
+                </span>
               </button>
 
               {/* Botón Salir */}
@@ -414,36 +416,33 @@ function AppContent() {
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
-                  padding: "0.5rem 1rem",
+                  padding: "0.5rem",
                   backgroundColor: "rgba(255,255,255,0.2)",
                   color: "white",
                   border: "1px solid rgba(255,255,255,0.3)",
                   borderRadius: "0.5rem",
                   cursor: "pointer",
                   fontWeight: 600,
-                  fontSize: "0.875rem",
+                  fontSize: "0.8rem",
                   transition: "background-color 0.2s",
                 }}
-                onMouseEnter={(e) =>
-                  (e.target.style.backgroundColor = "rgba(255,255,255,0.3)")
-                }
-                onMouseLeave={(e) =>
-                  (e.target.style.backgroundColor = "rgba(255,255,255,0.2)")
-                }
               >
                 <LogOut size={16} />
-                Salir
+                <span className="hide-mobile" style={{ display: 'none' }}>Salir</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Contenido - Solo Ventas */}
-        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+        {/* Contenido - Ventas */}
+        <div style={{ 
+          maxWidth: "1280px", 
+          margin: "0 auto",
+          padding: "0 0.5rem"
+        }}>
           <Ventas />
         </div>
 
-        {/* Modal de Perfil */}
         {showUserProfile && (
           <Profile
             onClose={() => setShowUserProfile(false)}
@@ -451,23 +450,36 @@ function AppContent() {
             onUserUpdate={handleUserUpdate}
           />
         )}
+
+        {/* Estilos responsive */}
+        <style>{`
+          @media (min-width: 640px) {
+            .btn-claro span, .btn-afip span, .hide-mobile {
+              display: inline !important;
+            }
+          }
+          
+          .btn-claro:hover {
+            background-color: #dc2626 !important;
+          }
+          
+          .btn-afip:hover {
+            background-color: #0e7490 !important;
+          }
+        `}</style>
       </div>
     );
   }
 
-  // Si es ADMIN o SUPERADMIN, mostrar con navegación completa
+  // ============================================
+  // VISTA ADMIN/SUPERADMIN - RESPONSIVE
+  // ============================================
   const menuItems = [
     { id: "dashboard", nombre: "Inicio", icono: Home, componente: Dashboard },
     { id: "stock", nombre: "Stock", icono: Package, componente: Stock },
-    {
-      id: "reportes",
-      nombre: "Reportes",
-      icono: BarChart3,
-      componente: Reportes,
-    },
+    { id: "reportes", nombre: "Reportes", icono: BarChart3, componente: Reportes },
   ];
 
-  // Si es SUPERADMIN, agregar opciones exclusivas
   if (user.rol === "superadmin" || user.rol === "SUPERADMIN") {
     menuItems.push({
       id: "users",
@@ -484,14 +496,14 @@ function AppContent() {
   }
   
   if (user.rol === "admin" || user.rol === "ADMIN" || 
-    user.rol === "superadmin" || user.rol === "SUPERADMIN") {
-  menuItems.push({
-    id: "ventas-detalle",
-    nombre: "Detalle Ventas",
-    icono: BarChart3,  
-    componente: VentasDetalle,
-  });
-}
+      user.rol === "superadmin" || user.rol === "SUPERADMIN") {
+    menuItems.push({
+      id: "ventas-detalle",
+      nombre: "Detalle Ventas",
+      icono: BarChart3,  
+      componente: VentasDetalle,
+    });
+  }
 
   const ComponenteActual = menuItems.find(
     (item) => item.id === vistaActual
@@ -499,15 +511,14 @@ function AppContent() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f3f4f6" }}>
-      {/* Banner de estado offline */}
       <OfflineBanner />
       
-      {/* Header */}
+      {/* Header ADMIN - Responsive */}
       <div
         style={{
           background: "linear-gradient(to right, #2563eb, #1e40af)",
           color: "white",
-          padding: "0.8rem",
+          padding: "0.75rem",
           boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
           marginTop: (!isOnline || ventasPendientes > 0) ? '50px' : '0',
           transition: 'margin-top 0.3s ease'
@@ -520,37 +531,66 @@ function AppContent() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            gap: "0.75rem"
           }}
         >
-          {/* Logo + Título */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          {/* Logo + Título - Responsive */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flex: 1, minWidth: 0 }}>
             <img 
               src="/logos/DonCharoLogo.png" 
-              alt="Don Charo Logo"
+              alt="Don Charo"
               style={{
-                height: "60px",
+                height: "clamp(40px, 8vw, 60px)",
                 width: "auto",
-                objectFit: "contain"
+                objectFit: "contain",
+                flexShrink: 0
               }}
             />
-            <div>
-              <h1 style={{ fontSize: "2rem", fontWeight: "bold", margin: 0 }}>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ 
+                fontSize: "clamp(1rem, 4vw, 2rem)", 
+                fontWeight: "bold", 
+                margin: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap"
+              }}>
                 Autoservicio Don Charo
               </h1>
               {!isOnline && (
-                <div style={{ fontSize: "0.875rem", marginTop: "0.25rem", opacity: 0.9 }}>
+                <div style={{ fontSize: "0.75rem", marginTop: "0.25rem", opacity: 0.9 }}>
                   🔴 Modo Offline
                 </div>
               )}
             </div>
           </div>
 
-          {/* User Info - Clickeable */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          {/* User Actions - Responsive */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+            {/* Menú hamburguesa para móvil */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="mobile-menu-btn"
+              style={{
+                display: "none",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0.5rem",
+                backgroundColor: "rgba(255,255,255,0.1)",
+                color: "white",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: "0.5rem",
+                cursor: "pointer",
+              }}
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+
+            {/* Botones desktop */}
             <button
               onClick={() => setShowUserProfile(true)}
+              className="desktop-user-btn"
               style={{
-                textAlign: "right",
                 display: "flex",
                 alignItems: "center",
                 gap: "0.5rem",
@@ -563,18 +603,32 @@ function AppContent() {
                 fontWeight: 600,
                 transition: "background-color 0.2s",
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")
-              }
             >
               <UserIcon size={20} />
               <span>{user.nombre_completo || user.username}</span>
             </button>
+
+            {/* Botón usuario móvil */}
+            <button
+              onClick={() => setShowUserProfile(true)}
+              className="mobile-user-btn"
+              style={{
+                display: "none",
+                alignItems: "center",
+                padding: "0.5rem",
+                backgroundColor: "rgba(255,255,255,0.1)",
+                color: "white",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: "0.5rem",
+                cursor: "pointer",
+              }}
+            >
+              <UserIcon size={20} />
+            </button>
+
             <button
               onClick={handleLogout}
+              className="desktop-logout-btn"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -588,12 +642,6 @@ function AppContent() {
                 fontWeight: 600,
                 transition: "background-color 0.2s",
               }}
-              onMouseEnter={(e) =>
-                (e.target.style.backgroundColor = "rgba(255,255,255,0.3)")
-              }
-              onMouseLeave={(e) =>
-                (e.target.style.backgroundColor = "rgba(255,255,255,0.2)")
-              }
             >
               <LogOut size={18} />
               Salir
@@ -602,29 +650,33 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Navigation - Para Admin y Superadmin */}
+      {/* Navigation Desktop */}
       <div
+        className="desktop-nav"
         style={{
           backgroundColor: "white",
           boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
         }}
       >
         <div
-          style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 1.5rem" }}
+          style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 1rem" }}
         >
-          <nav style={{ display: "flex", gap: "0.25rem" }}>
+          <nav style={{ display: "flex", gap: "0.25rem", overflowX: "auto" }}>
             {menuItems.map((item) => {
               const Icono = item.icono;
               const activo = vistaActual === item.id;
               return (
                 <button
                   key={item.id}
-                  onClick={() => setVistaActual(item.id)}
+                  onClick={() => {
+                    setVistaActual(item.id);
+                    setMobileMenuOpen(false);
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
-                    padding: "0.8rem 1.5rem",
+                    padding: "0.75rem 1.25rem",
                     fontWeight: 600,
                     border: "none",
                     backgroundColor: activo ? "#eff6ff" : "transparent",
@@ -634,6 +686,8 @@ function AppContent() {
                       : "4px solid transparent",
                     cursor: "pointer",
                     transition: "all 0.2s",
+                    whiteSpace: "nowrap",
+                    fontSize: "0.875rem"
                   }}
                   onMouseEnter={(e) => {
                     if (!activo)
@@ -644,7 +698,7 @@ function AppContent() {
                       e.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
-                  <Icono size={20} />
+                  <Icono size={18} />
                   {item.nombre}
                 </button>
               );
@@ -653,12 +707,110 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+      {/* Overlay oscuro cuando el menú está abierto */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            zIndex: 999,
+            display: "none"
+          }}
+          className="mobile-menu-overlay"
+        />
+      )}
+
+      {/* Navigation Mobile - Menú desplegable */}
+      {mobileMenuOpen && (
+        <div
+          className="mobile-nav"
+          style={{
+            position: "fixed",
+            top: "calc(60px + (var(--banner-height, 0px)))",
+            right: 0,
+            width: "280px",
+            maxWidth: "80vw",
+            backgroundColor: "white",
+            boxShadow: "-4px 0 10px rgba(0, 0, 0, 0.15)",
+            zIndex: 1000,
+            maxHeight: "calc(100vh - 60px - var(--banner-height, 0px))",
+            overflowY: "auto",
+            display: "none",
+            animation: "slideInRight 0.3s ease"
+          }}
+        >
+          {menuItems.map((item) => {
+            const Icono = item.icono;
+            const activo = vistaActual === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setVistaActual(item.id);
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "1rem",
+                  padding: "1rem 1.5rem",
+                  fontWeight: 600,
+                  border: "none",
+                  backgroundColor: activo ? "#eff6ff" : "white",
+                  color: activo ? "#1e40af" : "#6b7280",
+                  borderLeft: activo ? "4px solid #1e40af" : "4px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  fontSize: "1rem",
+                  textAlign: "left"
+                }}
+              >
+                <Icono size={20} />
+                {item.nombre}
+              </button>
+            );
+          })}
+          
+          {/* Botón logout en menú móvil */}
+          <button
+            onClick={handleLogout}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: "1rem",
+              padding: "1rem 1.5rem",
+              fontWeight: 600,
+              border: "none",
+              backgroundColor: "#fee2e2",
+              color: "#991b1b",
+              cursor: "pointer",
+              fontSize: "1rem",
+              textAlign: "left",
+              borderTop: "1px solid #e5e7eb"
+            }}
+          >
+            <LogOut size={20} />
+            Cerrar Sesión
+          </button>
+        </div>
+      )}
+
+      {/* Main Content - Responsive */}
+      <div style={{ 
+        maxWidth: "1280px", 
+        margin: "0 auto",
+        padding: "0 0.5rem"
+      }}>
         {ComponenteActual && <ComponenteActual />}
       </div>
 
-      {/* Modal de Perfil */}
       {showUserProfile && (
         <Profile
           onClose={() => setShowUserProfile(false)}
@@ -666,6 +818,90 @@ function AppContent() {
           onUserUpdate={handleUserUpdate}
         />
       )}
+
+      {/* Estilos Responsive */}
+      <style>{`
+        /* Mobile First */
+        @media (max-width: 768px) {
+          .mobile-menu-btn {
+            display: flex !important;
+          }
+          
+          .desktop-user-btn,
+          .desktop-logout-btn {
+            display: none !important;
+          }
+          
+          .mobile-user-btn {
+            display: flex !important;
+          }
+          
+          .desktop-nav {
+            display: none !important;
+          }
+          
+          .mobile-nav {
+            display: block !important;
+          }
+          
+          .mobile-menu-overlay {
+            display: block !important;
+          }
+        }
+        
+        /* Animación de entrada del menú */
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        /* Tablet */
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .desktop-nav nav {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+          
+          .desktop-nav nav::-webkit-scrollbar {
+            height: 4px;
+          }
+          
+          .desktop-nav nav::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 2px;
+          }
+        }
+        
+        /* Ocultar scrollbar en navegación móvil pero permitir scroll */
+        .desktop-nav nav::-webkit-scrollbar {
+          height: 4px;
+        }
+        
+        .desktop-nav nav::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .desktop-nav nav::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+        }
+        
+        /* Efectos hover */
+        button:hover {
+          opacity: 0.9;
+        }
+        
+        /* Ajuste para banner en altura total */
+        :root {
+          --banner-height: 0px;
+        }
+      `}</style>
     </div>
   );
 }
