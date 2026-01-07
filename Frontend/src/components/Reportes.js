@@ -5,21 +5,32 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { TrendingUp, DollarSign, ShoppingCart, Package, Clock, RefreshCw, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { getDashboard, getVentasPorPeriodo, getCategoriasVendidas, getProductosVendidos, getVentasPorHorario, getVentasPorHorarioFecha, getGanancias, getMetodosPago } from '../api/api';
 import { useToast } from '../Toast';
+import { useTheme } from '../context/ThemeContext';
 
-// Tooltip personalizado para gráficos
-const CustomTooltip = ({ active, payload, label }) => {
+// Tooltip personalizado para gráficos - CON DARK MODE
+const CustomTooltip = ({ active, payload, label, theme }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: theme.chart.tooltip.bg,
         padding: '0.75rem',
-        border: '2px solid #e5e7eb',
+        border: `2px solid ${theme.chart.tooltip.border}`,
         borderRadius: '0.5rem',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+        boxShadow: theme.shadow.md
       }}>
-        <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#374151' }}>{label}</p>
+        <p style={{ 
+          fontWeight: 'bold', 
+          marginBottom: '0.5rem', 
+          color: theme.chart.tooltip.text 
+        }}>
+          {label}
+        </p>
         {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.color, fontSize: '0.875rem', margin: '0.25rem 0' }}>
+          <p key={index} style={{ 
+            color: entry.color, 
+            fontSize: '0.875rem', 
+            margin: '0.25rem 0' 
+          }}>
             {entry.name}: {typeof entry.value === 'number' ? 
               (entry.name.includes('%') ? `${entry.value.toFixed(1)}%` : `${entry.value.toFixed(2)}`) 
               : entry.value}
@@ -31,24 +42,24 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// Componente skeleton para estado de carga
-const ChartSkeleton = ({ height = 180 }) => (
+// Componente skeleton para estado de carga - CON DARK MODE
+const ChartSkeleton = ({ height = 180, theme }) => (
   <div style={{ 
     width: '100%', 
     height: `${height}px`,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: theme.bg.tertiary,
     borderRadius: '0.5rem',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     animation: 'pulse 1.5s ease-in-out infinite'
   }}>
-    <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+    <div style={{ textAlign: 'center', color: theme.text.secondary }}>
       <div style={{ 
         width: '60px', 
         height: '60px', 
         margin: '0 auto',
-        backgroundColor: '#e5e7eb',
+        backgroundColor: theme.border.medium,
         borderRadius: '0.5rem',
         marginBottom: '0.5rem',
         animation: 'pulse 1.5s ease-in-out infinite'
@@ -60,6 +71,8 @@ const ChartSkeleton = ({ height = 180 }) => (
 
 const Reportes = () => {
   const toast = useToast();
+  const { theme, isDark } = useTheme();
+  
   const [loading, setLoading] = useState(true);
   const [vistaActual, setVistaActual] = useState('ventas');
   const [periodoVentas, setPeriodoVentas] = useState('dia');
@@ -182,7 +195,7 @@ const Reportes = () => {
             }
           }
           
-          /* Scrollbar personalizado */
+          /* Scrollbar personalizado con tema */
           div[style*="overflow"] {
             scrollbar-width: thin;
             scrollbar-gutter: stable;
@@ -194,27 +207,27 @@ const Reportes = () => {
           }
           
           div[style*="overflow"]::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: ${theme.bg.tertiary};
             border-radius: 10px;
           }
           
           div[style*="overflow"]::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
+            background: ${theme.border.medium};
             border-radius: 10px;
           }
           
           div[style*="overflow"]::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+            background: ${theme.border.dark};
           }
         `}
       </style>
 
       {/* Header con controles */}
       <div style={{ 
-        backgroundColor: 'white',
+        backgroundColor: theme.bg.card,
         padding: isMobile ? '0.75rem' : '1rem',
         borderRadius: '0.5rem',
-        border: '2px solid #e5e7eb',
+        border: `2px solid ${theme.border.light}`,
         marginBottom: '0.75rem',
         flexShrink: 0
       }}>
@@ -230,7 +243,8 @@ const Reportes = () => {
             <h2 style={{ 
               fontSize: isMobile ? '1.25rem' : '1.5rem', 
               fontWeight: 'bold',
-              margin: 0
+              margin: 0,
+              color: theme.text.primary
             }}>
               Dashboard de Reportes
             </h2>
@@ -239,13 +253,16 @@ const Reportes = () => {
                 onClick={() => setFiltrosColapsados(!filtrosColapsados)}
                 className="btn"
                 style={{ 
-                  backgroundColor: '#f3f4f6', 
-                  color: '#374151',
+                  backgroundColor: theme.bg.tertiary, 
+                  color: theme.text.primary,
                   padding: '0.375rem 0.75rem',
                   fontSize: '0.875rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.25rem'
+                  gap: '0.25rem',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer'
                 }}
               >
                 {filtrosColapsados ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
@@ -276,8 +293,8 @@ const Reportes = () => {
                     }}
                     style={{
                       padding: isMobile ? '0.5rem 0.375rem' : '0.375rem 0.75rem',
-                      backgroundColor: periodoVentas === periodo ? '#3b82f6' : '#e5e7eb',
-                      color: periodoVentas === periodo ? 'white' : '#374151',
+                      backgroundColor: periodoVentas === periodo ? theme.brand.primary : theme.bg.tertiary,
+                      color: periodoVentas === periodo ? theme.text.white : theme.text.primary,
                       border: 'none',
                       borderRadius: '0.375rem',
                       fontWeight: 600,
@@ -296,14 +313,18 @@ const Reportes = () => {
                 onClick={cargarDatos} 
                 className="btn" 
                 style={{ 
-                  backgroundColor: '#6b7280', 
-                  color: 'white', 
+                  backgroundColor: theme.text.secondary, 
+                  color: theme.text.white, 
                   padding: '0.5rem 0.75rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  fontSize: isMobile ? '0.8125rem' : '0.875rem'
+                  fontSize: isMobile ? '0.8125rem' : '0.875rem',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontWeight: 600
                 }} 
                 disabled={loading}
               >
@@ -331,16 +352,16 @@ const Reportes = () => {
         }}>
           {/* Cantidad de Ventas */}
           <div style={{ 
-            backgroundColor: 'white', 
+            backgroundColor: theme.bg.card, 
             padding: isMobile ? '0.75rem' : '0.75rem', 
             borderRadius: '0.5rem', 
-            border: '2px solid #e5e7eb' 
+            border: `2px solid ${theme.border.light}` 
           }}>
             <h3 style={{ 
               fontSize: isMobile ? '0.9375rem' : '1rem', 
               fontWeight: 'bold', 
               marginBottom: '0.5rem', 
-              color: '#000000ff',
+              color: theme.text.primary,
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem'
@@ -349,20 +370,24 @@ const Reportes = () => {
               Cantidad de Ventas
             </h3>
             {loading ? (
-              <ChartSkeleton height={getChartHeight()} />
+              <ChartSkeleton height={getChartHeight()} theme={theme} />
             ) : (
               <ResponsiveContainer width="100%" height={getChartHeight()}>
                 <LineChart data={datosVentas}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.chart.grid} />
                   <XAxis 
                     dataKey="periodo" 
                     style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }}
                     angle={isMobile ? -45 : 0}
                     textAnchor={isMobile ? "end" : "middle"}
                     height={isMobile ? 60 : 30}
+                    tick={{ fill: theme.chart.text }}
                   />
-                  <YAxis style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <YAxis 
+                    style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }}
+                    tick={{ fill: theme.chart.text }}
+                  />
+                  <Tooltip content={<CustomTooltip theme={theme} />} />
                   <Line 
                     type="monotone" 
                     dataKey="cantidad" 
@@ -377,16 +402,16 @@ const Reportes = () => {
 
           {/* Total en Ventas */}
           <div style={{ 
-            backgroundColor: 'white', 
+            backgroundColor: theme.bg.card, 
             padding: isMobile ? '0.75rem' : '0.75rem', 
             borderRadius: '0.5rem', 
-            border: '2px solid #e5e7eb' 
+            border: `2px solid ${theme.border.light}` 
           }}>
             <h3 style={{ 
               fontSize: isMobile ? '0.9375rem' : '1rem', 
               fontWeight: 'bold', 
               marginBottom: '0.5rem', 
-              color: '#010705ff',
+              color: theme.text.primary,
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem'
@@ -395,20 +420,24 @@ const Reportes = () => {
               Total en Ventas
             </h3>
             {loading ? (
-              <ChartSkeleton height={getChartHeight()} />
+              <ChartSkeleton height={getChartHeight()} theme={theme} />
             ) : (
               <ResponsiveContainer width="100%" height={getChartHeight()}>
                 <LineChart data={datosVentas}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.chart.grid} />
                   <XAxis 
                     dataKey="periodo" 
                     style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }}
                     angle={isMobile ? -45 : 0}
                     textAnchor={isMobile ? "end" : "middle"}
                     height={isMobile ? 60 : 30}
+                    tick={{ fill: theme.chart.text }}
                   />
-                  <YAxis style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <YAxis 
+                    style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }}
+                    tick={{ fill: theme.chart.text }}
+                  />
+                  <Tooltip content={<CustomTooltip theme={theme} />} />
                   <Line 
                     type="monotone" 
                     dataKey="total" 
@@ -423,16 +452,16 @@ const Reportes = () => {
 
           {/* Ganancias */}
           <div style={{ 
-            backgroundColor: 'white', 
+            backgroundColor: theme.bg.card, 
             padding: isMobile ? '0.75rem' : '0.75rem', 
             borderRadius: '0.5rem', 
-            border: '2px solid #e5e7eb' 
+            border: `2px solid ${theme.border.light}` 
           }}>
             <h3 style={{ 
               fontSize: isMobile ? '0.9375rem' : '1rem', 
               fontWeight: 'bold', 
               marginBottom: '0.5rem', 
-              color: '#000000ff',
+              color: theme.text.primary,
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem'
@@ -441,20 +470,24 @@ const Reportes = () => {
               Ganancias
             </h3>
             {loading ? (
-              <ChartSkeleton height={getChartHeight()} />
+              <ChartSkeleton height={getChartHeight()} theme={theme} />
             ) : (
               <ResponsiveContainer width="100%" height={getChartHeight()}>
                 <LineChart data={datosVentasGanancia}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.chart.grid} />
                   <XAxis 
                     dataKey="periodo" 
                     style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }}
                     angle={isMobile ? -45 : 0}
                     textAnchor={isMobile ? "end" : "middle"}
                     height={isMobile ? 60 : 30}
+                    tick={{ fill: theme.chart.text }}
                   />
-                  <YAxis style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <YAxis 
+                    style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }}
+                    tick={{ fill: theme.chart.text }}
+                  />
+                  <Tooltip content={<CustomTooltip theme={theme} />} />
                   <Line 
                     type="monotone" 
                     dataKey="ganancia" 
@@ -477,15 +510,16 @@ const Reportes = () => {
         }}>
           {/* Top Categorías */}
           <div style={{ 
-            backgroundColor: 'white', 
+            backgroundColor: theme.bg.card, 
             padding: isMobile ? '0.75rem' : '0.75rem', 
             borderRadius: '0.5rem', 
-            border: '2px solid #e5e7eb' 
+            border: `2px solid ${theme.border.light}` 
           }}>
             <h3 style={{ 
               fontSize: isMobile ? '0.9375rem' : '1rem', 
               fontWeight: 'bold', 
               marginBottom: '0.5rem',
+              color: theme.text.primary,
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem'
@@ -494,20 +528,24 @@ const Reportes = () => {
               Top {isMobile ? '5' : '10'} Categorías
             </h3>
             {loading ? (
-              <ChartSkeleton height={getChartHeight()} />
+              <ChartSkeleton height={getChartHeight()} theme={theme} />
             ) : (
               <ResponsiveContainer width="100%" height={getChartHeight()}>
                 <BarChart data={datosCategorias.slice(0, isMobile ? 5 : 10)}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.chart.grid} />
                   <XAxis 
                     dataKey="categoria" 
                     style={{ fontSize: isMobile ? '0.55rem' : '0.65rem' }} 
                     angle={-45} 
                     textAnchor="end" 
-                    height={isMobile ? 80 : 60} 
+                    height={isMobile ? 80 : 60}
+                    tick={{ fill: theme.chart.text }}
                   />
-                  <YAxis style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <YAxis 
+                    style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }}
+                    tick={{ fill: theme.chart.text }}
+                  />
+                  <Tooltip content={<CustomTooltip theme={theme} />} />
                   <Bar dataKey="cantidad" fill="#3b82f6" />
                 </BarChart>
               </ResponsiveContainer>
@@ -516,15 +554,16 @@ const Reportes = () => {
 
           {/* Métodos de Pago */}
           <div style={{ 
-            backgroundColor: 'white', 
+            backgroundColor: theme.bg.card, 
             padding: isMobile ? '0.75rem' : '0.75rem', 
             borderRadius: '0.5rem', 
-            border: '2px solid #e5e7eb' 
+            border: `2px solid ${theme.border.light}` 
           }}>
             <h3 style={{ 
               fontSize: isMobile ? '0.9375rem' : '1rem', 
               fontWeight: 'bold', 
               marginBottom: '0.5rem',
+              color: theme.text.primary,
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem'
@@ -533,7 +572,7 @@ const Reportes = () => {
               Métodos de Pago
             </h3>
             {loading ? (
-              <ChartSkeleton height={getChartHeight()} />
+              <ChartSkeleton height={getChartHeight()} theme={theme} />
             ) : (
               <ResponsiveContainer width="100%" height={getChartHeight()}>
                 <PieChart>
@@ -550,7 +589,7 @@ const Reportes = () => {
                     outerRadius={isMobile ? 50 : 60}
                     fill="#8884d8"
                     dataKey="cantidad"
-                    style={{ fontSize: isMobile ? '0.625rem' : '0.75rem' }}
+                    style={{ fontSize: isMobile ? '0.625rem' : '0.75rem', fill: theme.text.primary }}
                   >
                     {datosMetodosPago.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -562,6 +601,12 @@ const Reportes = () => {
                       const porcentaje = ((value / total) * 100).toFixed(1);
                       return [`${value} (${porcentaje}%)`, 'Ventas'];
                     }}
+                    contentStyle={{
+                      backgroundColor: theme.chart.tooltip.bg,
+                      border: `1px solid ${theme.chart.tooltip.border}`,
+                      borderRadius: '0.375rem',
+                      color: theme.chart.tooltip.text
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -570,10 +615,10 @@ const Reportes = () => {
 
           {/* Ventas por Horario */}
           <div style={{ 
-            backgroundColor: 'white', 
+            backgroundColor: theme.bg.card, 
             padding: isMobile ? '0.75rem' : '0.75rem', 
             borderRadius: '0.5rem', 
-            border: '2px solid #e5e7eb' 
+            border: `2px solid ${theme.border.light}` 
           }}>
             <div style={{ 
               display: 'flex', 
@@ -586,6 +631,7 @@ const Reportes = () => {
               <h3 style={{ 
                 fontSize: isMobile ? '0.9375rem' : '1rem', 
                 fontWeight: 'bold',
+                color: theme.text.primary,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
@@ -599,7 +645,7 @@ const Reportes = () => {
                   <Calendar size={14} style={{ 
                     position: 'absolute', 
                     left: '0.5rem', 
-                    color: '#6b7280',
+                    color: theme.text.secondary,
                     pointerEvents: 'none',
                     zIndex: 1
                   }} />
@@ -613,30 +659,36 @@ const Reportes = () => {
                   }}
                   style={{
                     padding: isMobile ? '0.375rem 0.5rem 0.375rem 2rem' : '0.25rem 0.5rem',
-                    border: '1px solid #d1d5db',
+                    border: `1px solid ${theme.input.border}`,
                     borderRadius: '0.375rem',
                     fontSize: isMobile ? '0.8125rem' : '0.8125rem',
                     cursor: 'pointer',
-                    width: isMobile ? '100%' : 'auto'
+                    width: isMobile ? '100%' : 'auto',
+                    backgroundColor: theme.input.bg,
+                    color: theme.text.primary
                   }}
                 />
               </div>
             </div>
             {loading ? (
-              <ChartSkeleton height={getChartHeight()} />
+              <ChartSkeleton height={getChartHeight()} theme={theme} />
             ) : (
               <ResponsiveContainer width="100%" height={getChartHeight()}>
                 <BarChart data={datosHorarios}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.chart.grid} />
                   <XAxis 
                     dataKey="hora" 
                     style={{ fontSize: isMobile ? '0.625rem' : '0.65rem' }}
                     angle={isMobile ? -45 : 0}
                     textAnchor={isMobile ? "end" : "middle"}
                     height={isMobile ? 50 : 30}
+                    tick={{ fill: theme.chart.text }}
                   />
-                  <YAxis style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <YAxis 
+                    style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }}
+                    tick={{ fill: theme.chart.text }}
+                  />
+                  <Tooltip content={<CustomTooltip theme={theme} />} />
                   <Bar dataKey="cantidad" fill="#8b5cf6" name="Cantidad" />
                 </BarChart>
               </ResponsiveContainer>
@@ -646,16 +698,17 @@ const Reportes = () => {
 
         {/* Fila 3: Top Productos (ancho completo) */}
         <div style={{ 
-          backgroundColor: 'white', 
+          backgroundColor: theme.bg.card, 
           padding: isMobile ? '0.75rem' : '0.75rem', 
           borderRadius: '0.5rem', 
-          border: '2px solid #e5e7eb',
+          border: `2px solid ${theme.border.light}`,
           marginBottom: isMobile ? '0.5rem' : '0'
         }}>
           <h3 style={{ 
             fontSize: isMobile ? '0.9375rem' : '1rem', 
             fontWeight: 'bold', 
             marginBottom: '0.5rem',
+            color: theme.text.primary,
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
@@ -664,21 +717,25 @@ const Reportes = () => {
             Top {isMobile ? '5' : '10'} Productos Más Vendidos
           </h3>
           {loading ? (
-            <ChartSkeleton height={isMobile ? 250 : 220} />
+            <ChartSkeleton height={isMobile ? 250 : 220} theme={theme} />
           ) : (
             <ResponsiveContainer width="100%" height={isMobile ? 250 : 220}>
               <BarChart data={datosProductos.slice(0, isMobile ? 5 : 10)}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.chart.grid} />
                 <XAxis 
                   dataKey="nombre" 
                   angle={-45} 
                   textAnchor="end" 
                   height={isMobile ? 100 : 80} 
                   interval={0} 
-                  style={{ fontSize: isMobile ? '0.55rem' : '0.65rem' }} 
+                  style={{ fontSize: isMobile ? '0.55rem' : '0.65rem' }}
+                  tick={{ fill: theme.chart.text }}
                 />
-                <YAxis style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }} />
-                <Tooltip content={<CustomTooltip />} />
+                <YAxis 
+                  style={{ fontSize: isMobile ? '0.625rem' : '0.7rem' }}
+                  tick={{ fill: theme.chart.text }}
+                />
+                <Tooltip content={<CustomTooltip theme={theme} />} />
                 <Bar dataKey="cantidad" fill="#87408dff" />
               </BarChart>
             </ResponsiveContainer>
@@ -688,17 +745,17 @@ const Reportes = () => {
         {/* Leyenda para métodos de pago en mobile */}
         {isMobile && datosMetodosPago.length > 0 && !loading && (
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             padding: '0.75rem',
             borderRadius: '0.5rem',
-            border: '2px solid #e5e7eb',
+            border: `2px solid ${theme.border.light}`,
             marginTop: '0.5rem'
           }}>
             <h4 style={{ 
               fontSize: '0.875rem', 
               fontWeight: 'bold', 
               marginBottom: '0.5rem',
-              color: '#374151'
+              color: theme.text.primary
             }}>
               Leyenda Métodos de Pago
             </h4>
@@ -719,7 +776,7 @@ const Reportes = () => {
                       borderRadius: '0.125rem',
                       flexShrink: 0
                     }} />
-                    <span style={{ fontSize: '0.75rem', color: '#374151' }}>
+                    <span style={{ fontSize: '0.75rem', color: theme.text.primary }}>
                       {metodo.metodo}: {porcentaje}%
                     </span>
                   </div>

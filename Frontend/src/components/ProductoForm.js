@@ -2,9 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { getCategorias } from '../api/api';
 import { useToast } from '../Toast';
+import { useTheme } from '../context/ThemeContext';
 
 const ProductoForm = ({ producto, onClose, onSubmit }) => {
   const toast = useToast();
+  const { theme } = useTheme();
   
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -292,20 +294,21 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: 'rgba(0,0,0,0.7)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000
     }}>
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: theme.bg.card,
         borderRadius: '0.5rem',
         width: '90%',
         maxWidth: '600px',
         maxHeight: '90vh',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        boxShadow: theme.shadow.xl
       }}>
         {/* Header */}
         <div style={{
@@ -313,10 +316,25 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
           flexShrink: 0
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: theme.text.primary }}>
               {producto ? 'Editar Producto' : 'Nuevo Producto'}
             </h3>
-            <button onClick={onClose} style={{ cursor: 'pointer', border: 'none', background: 'none' }}>
+            <button 
+              onClick={onClose} 
+              style={{ 
+                cursor: 'pointer', 
+                border: 'none', 
+                background: 'none',
+                color: theme.text.secondary,
+                padding: '0.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: '0.25rem',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.hover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
               <X size={24} />
             </button>
           </div>
@@ -341,8 +359,8 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Nombre */}
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                  Nombre <span style={{ color: '#ef4444' }}>*</span>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
+                  Nombre <span style={{ color: theme.brand.danger }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -351,12 +369,21 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                   onChange={handleChange}
                   required
                   className="input"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    backgroundColor: theme.input.bg,
+                    border: `1px solid ${theme.input.border}`,
+                    borderRadius: '0.375rem',
+                    color: theme.text.primary,
+                    fontSize: '0.875rem'
+                  }}
                 />
               </div>
 
               {/* Descripción */}
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
                   Descripción
                 </label>
                 <textarea
@@ -365,14 +392,24 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                   onChange={handleChange}
                   className="input"
                   rows="3"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    backgroundColor: theme.input.bg,
+                    border: `1px solid ${theme.input.border}`,
+                    borderRadius: '0.375rem',
+                    color: theme.text.primary,
+                    fontSize: '0.875rem',
+                    resize: 'vertical'
+                  }}
                 />
               </div>
 
               {/* ✅ NUEVO: Precio de Costo y Margen de Ganancia */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                    Precio de Costo <span style={{ color: '#ef4444' }}>*</span>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
+                    Precio de Costo <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <input
                     type="number"
@@ -384,12 +421,21 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                     min="0"
                     className="input"
                     placeholder="100.00"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      backgroundColor: theme.input.bg,
+                      border: `1px solid ${theme.input.border}`,
+                      borderRadius: '0.375rem',
+                      color: theme.text.primary,
+                      fontSize: '0.875rem'
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                    Margen de Ganancia (%) <span style={{ color: '#ef4444' }}>*</span>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
+                    Margen de Ganancia (%) <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <input
                     type="number"
@@ -401,6 +447,15 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                     min="0"
                     className="input"
                     placeholder="25"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      backgroundColor: theme.input.bg,
+                      border: `1px solid ${theme.input.border}`,
+                      borderRadius: '0.375rem',
+                      color: theme.text.primary,
+                      fontSize: '0.875rem'
+                    }}
                   />
                 </div>
               </div>
@@ -408,22 +463,22 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
               {/* ✅ MOSTRAR PRECIO DE VENTA CALCULADO */}
               {formData.precio_costo > 0 && formData.margen_porcentaje >= 0 && (
                 <div style={{
-                  backgroundColor: '#eff6ff',
+                  backgroundColor: theme.bg.active,
                   padding: '1rem',
                   borderRadius: '0.5rem',
-                  border: '2px solid #3b82f6'
+                  border: `2px solid ${theme.brand.primary}`
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e40af' }}>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: theme.brand.primary }}>
                       Precio de Venta (calculado):
                     </p>
-                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e40af' }}>
+                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: theme.brand.primary }}>
                       ${precioVentaCalculado}
                     </p>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#3b82f6' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: theme.text.secondary }}>
                     <span>Ganancia por unidad:</span>
-                    <span style={{ fontWeight: 600 }}>${gananciaPorUnidad}</span>
+                    <span style={{ fontWeight: 600, color: theme.brand.primary }}>${gananciaPorUnidad}</span>
                   </div>
                 </div>
               )}
@@ -431,8 +486,8 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
               {/* Stock */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                    Stock <span style={{ color: '#ef4444' }}>*</span>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
+                    Stock <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <input
                     type="number"
@@ -442,11 +497,20 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                     required
                     min="0"
                     className="input"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      backgroundColor: theme.input.bg,
+                      border: `1px solid ${theme.input.border}`,
+                      borderRadius: '0.375rem',
+                      color: theme.text.primary,
+                      fontSize: '0.875rem'
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
                     Stock Mínimo
                   </label>
                   <input
@@ -456,6 +520,15 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                     onChange={handleChange}
                     min="0"
                     className="input"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      backgroundColor: theme.input.bg,
+                      border: `1px solid ${theme.input.border}`,
+                      borderRadius: '0.375rem',
+                      color: theme.text.primary,
+                      fontSize: '0.875rem'
+                    }}
                   />
                 </div>
               </div>
@@ -464,8 +537,8 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 {/* Categoría con autocompletado */}
                 <div style={{ position: 'relative' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                    Categoría <span style={{ color: '#ef4444' }}>*</span>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
+                    Categoría <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <input
                     ref={inputCategoriaRef}
@@ -491,6 +564,15 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                     required
                     className="input"
                     autoComplete="off"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      backgroundColor: theme.input.bg,
+                      border: `1px solid ${theme.input.border}`,
+                      borderRadius: '0.375rem',
+                      color: theme.text.primary,
+                      fontSize: '0.875rem'
+                    }}
                   />
                   
                   {/* Dropdown de sugerencias */}
@@ -502,13 +584,13 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                         top: '100%',
                         left: 0,
                         right: 0,
-                        backgroundColor: 'white',
-                        border: '1px solid #e5e7eb',
+                        backgroundColor: theme.bg.card,
+                        border: `1px solid ${theme.border.light}`,
                         borderRadius: '0.375rem',
                         marginTop: '0.25rem',
                         maxHeight: '100px',
                         overflowY: 'auto',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        boxShadow: theme.shadow.md,
                         zIndex: 1000
                       }}
                     >
@@ -524,12 +606,13 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                                 style={{
                                   padding: '0.5rem 0.75rem',
                                   cursor: 'pointer',
-                                  borderBottom: idx < sugerenciasLocales.length - 1 ? '1px solid #f3f4f6' : 'none',
+                                  borderBottom: idx < sugerenciasLocales.length - 1 ? `1px solid ${theme.border.light}` : 'none',
                                   transition: 'background-color 0.15s',
-                                  fontSize: '0.875rem'
+                                  fontSize: '0.875rem',
+                                  color: theme.text.primary
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.hover}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.bg.card}
                               >
                                 {cat}
                               </div>
@@ -540,7 +623,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                             <div style={{ 
                               padding: '0.5rem 0.75rem', 
                               textAlign: 'center',
-                              color: '#6b7280',
+                              color: theme.text.secondary,
                               fontSize: '0.8125rem'
                             }}>
                               Buscando más categorías...
@@ -552,14 +635,14 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                             style={{
                               padding: '0.5rem 0.75rem',
                               cursor: 'pointer',
-                              color: '#3b82f6',
+                              color: theme.brand.primary,
                               fontWeight: 600,
                               transition: 'background-color 0.15s',
-                              borderTop: '2px solid #e5e7eb',
+                              borderTop: `2px solid ${theme.border.light}`,
                               fontSize: '0.875rem'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.active}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.bg.card}
                           >
                             + Agregar "{categoriaInput}"
                           </div>
@@ -567,7 +650,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                       ) : loadingCategorias ? (
                         <div style={{ 
                           padding: '0.75rem 1rem', 
-                          color: '#6b7280',
+                          color: theme.text.secondary,
                           textAlign: 'center',
                           fontSize: '0.875rem'
                         }}>
@@ -579,13 +662,13 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                           style={{
                             padding: '0.75rem 1rem',
                             cursor: 'pointer',
-                            color: '#3b82f6',
+                            color: theme.brand.primary,
                             fontWeight: 600,
                             transition: 'background-color 0.15s',
                             fontSize: '0.875rem'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.active}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.bg.card}
                         >
                           + Agregar "{categoriaInput}"
                         </div>
@@ -596,8 +679,8 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
 
                 {/* Código de barras */}
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                    Código de Barras <span style={{ color: '#ef4444' }}>*</span>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
+                    Código de Barras <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -607,6 +690,15 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                     required
                     className="input"
                     placeholder="7891234567890"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      backgroundColor: theme.input.bg,
+                      border: `1px solid ${theme.input.border}`,
+                      borderRadius: '0.375rem',
+                      color: theme.text.primary,
+                      fontSize: '0.875rem'
+                    }}
                   />
                 </div>
               </div>
@@ -619,10 +711,39 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
             flexShrink: 0
           }}>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <button type="submit" className="btn btn-success" style={{ flex: 1 }}>
+              <button 
+                type="submit" 
+                className="btn btn-success" 
+                style={{ 
+                  flex: 1,
+                  padding: '0.625rem 1.25rem',
+                  backgroundColor: theme.brand.success,
+                  color: theme.text.white,
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.875rem'
+                }}
+              >
                 {producto ? 'Actualizar' : 'Crear'}
               </button>
-              <button type="button" onClick={onClose} className="btn" style={{ flex: 1, backgroundColor: '#6b7280', color: 'white' }}>
+              <button 
+                type="button" 
+                onClick={onClose} 
+                className="btn" 
+                style={{ 
+                  flex: 1,
+                  padding: '0.625rem 1.25rem',
+                  backgroundColor: theme.text.secondary,
+                  color: theme.text.white,
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.875rem'
+                }}
+              >
                 Cancelar
               </button>
             </div>

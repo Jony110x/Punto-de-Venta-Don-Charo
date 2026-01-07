@@ -4,8 +4,11 @@ import { Plus, Edit2, Trash2, RefreshCw, Search, ChevronDown, ChevronUp, AlertTr
 import { getProductos, getCategorias, createProducto, updateProducto, deleteProducto, actualizarPreciosMasivo, getProductosIdsFiltrados } from '../api/api';
 import ProductoForm from './ProductoForm';
 import { useToast } from '../Toast';
+import { useTheme } from '../context/ThemeContext';
 
 const Stock = () => {
+  const { theme } = useTheme();
+  
   // Estados principales
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -425,14 +428,14 @@ const Stock = () => {
     cargarProductos(0, true);
   };
 
-  // Componente skeleton
+  // Componente skeleton - CON DARK MODE
   const SkeletonRow = () => (
-    <tr style={{ borderTop: '1px solid #e5e7eb' }}>
+    <tr style={{ borderTop: `1px solid ${theme.border.light}` }}>
       <td style={{ padding: '0.75rem' }}>
         <div style={{ 
           width: '16px',
           height: '16px',
-          backgroundColor: '#e5e7eb', 
+          backgroundColor: theme.border.medium, 
           borderRadius: '0.25rem',
           animation: 'pulse 1.5s ease-in-out infinite'
         }} />
@@ -440,14 +443,14 @@ const Stock = () => {
       <td style={{ padding: '0.75rem' }}>
         <div style={{ 
           height: '1rem', 
-          backgroundColor: '#e5e7eb', 
+          backgroundColor: theme.border.medium, 
           borderRadius: '0.25rem',
           width: '80%',
           animation: 'pulse 1.5s ease-in-out infinite'
         }} />
         <div style={{ 
           height: '0.75rem', 
-          backgroundColor: '#e5e7eb', 
+          backgroundColor: theme.border.medium, 
           borderRadius: '0.25rem',
           width: '50%',
           marginTop: '0.5rem',
@@ -459,7 +462,7 @@ const Stock = () => {
           <td style={{ padding: '0.75rem' }}>
             <div style={{ 
               height: '1rem', 
-              backgroundColor: '#e5e7eb', 
+              backgroundColor: theme.border.medium, 
               borderRadius: '0.25rem',
               width: '70%',
               animation: 'pulse 1.5s ease-in-out infinite'
@@ -468,7 +471,7 @@ const Stock = () => {
           <td style={{ padding: '0.75rem' }}>
             <div style={{ 
               height: '1rem', 
-              backgroundColor: '#e5e7eb', 
+              backgroundColor: theme.border.medium, 
               borderRadius: '0.25rem',
               width: '60%',
               animation: 'pulse 1.5s ease-in-out infinite'
@@ -477,7 +480,7 @@ const Stock = () => {
           <td style={{ padding: '0.75rem' }}>
             <div style={{ 
               height: '1rem', 
-              backgroundColor: '#e5e7eb', 
+              backgroundColor: theme.border.medium, 
               borderRadius: '0.25rem',
               width: '60%',
               animation: 'pulse 1.5s ease-in-out infinite'
@@ -486,7 +489,7 @@ const Stock = () => {
           <td style={{ padding: '0.75rem' }}>
             <div style={{ 
               height: '1.5rem', 
-              backgroundColor: '#e5e7eb', 
+              backgroundColor: theme.border.medium, 
               borderRadius: '0.25rem',
               width: '50%',
               animation: 'pulse 1.5s ease-in-out infinite'
@@ -495,7 +498,7 @@ const Stock = () => {
           <td style={{ padding: '0.75rem' }}>
             <div style={{ 
               height: '1rem', 
-              backgroundColor: '#e5e7eb', 
+              backgroundColor: theme.border.medium, 
               borderRadius: '0.25rem',
               width: '40%',
               animation: 'pulse 1.5s ease-in-out infinite'
@@ -504,7 +507,7 @@ const Stock = () => {
           <td style={{ padding: '0.75rem' }}>
             <div style={{ 
               height: '1.5rem', 
-              backgroundColor: '#e5e7eb', 
+              backgroundColor: theme.border.medium, 
               borderRadius: '9999px',
               width: '70%',
               animation: 'pulse 1.5s ease-in-out infinite'
@@ -517,14 +520,14 @@ const Stock = () => {
           <div style={{ 
             width: '28px',
             height: '28px',
-            backgroundColor: '#e5e7eb', 
+            backgroundColor: theme.border.medium, 
             borderRadius: '0.375rem',
             animation: 'pulse 1.5s ease-in-out infinite'
           }} />
           <div style={{ 
             width: '28px',
             height: '28px',
-            backgroundColor: '#e5e7eb', 
+            backgroundColor: theme.border.medium, 
             borderRadius: '0.375rem',
             animation: 'pulse 1.5s ease-in-out infinite'
           }} />
@@ -533,7 +536,7 @@ const Stock = () => {
     </tr>
   );
 
-  // Componente de tarjeta mobile
+  // Componente de tarjeta mobile - CON DARK MODE
   const ProductoCard = ({ producto, isLast }) => {
     const estado = getEstadoStock(producto);
     const margen = producto.margen_porcentaje?.toFixed(1) || '0.0';
@@ -543,9 +546,9 @@ const Stock = () => {
       <div 
         ref={isLast ? lastProductRef : null}
         style={{
-          backgroundColor: isSelected ? '#eff6ff' : 'white',
+          backgroundColor: isSelected ? theme.bg.active : theme.bg.card,
           padding: '1rem',
-          borderBottom: '1px solid #e5e7eb',
+          borderBottom: `1px solid ${theme.border.light}`,
           transition: 'background-color 0.2s'
         }}
       >
@@ -569,19 +572,20 @@ const Stock = () => {
                 fontWeight: 600, 
                 fontSize: '0.9375rem',
                 marginBottom: '0.25rem',
-                wordBreak: 'break-word'
+                wordBreak: 'break-word',
+                color: theme.text.primary
               }}>
                 {producto.nombre}
               </div>
               <div style={{ 
                 fontSize: '0.75rem', 
-                color: '#6b7280',
+                color: theme.text.secondary,
                 textTransform: 'capitalize'
               }}>
                 {producto.categoria || 'Sin categoría'}
               </div>
               {producto.codigo_barras && (
-                <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '0.125rem' }}>
+                <div style={{ fontSize: '0.7rem', color: theme.text.tertiary, marginTop: '0.125rem' }}>
                   CB: {producto.codigo_barras}
                 </div>
               )}
@@ -611,7 +615,7 @@ const Stock = () => {
           marginBottom: '0.75rem'
         }}>
           <div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.125rem' }}>
+            <div style={{ fontSize: '0.7rem', color: theme.text.secondary, marginBottom: '0.125rem' }}>
               Precio Costo
             </div>
             <div style={{ color: '#dc2626', fontWeight: 600, fontSize: '0.875rem' }}>
@@ -619,7 +623,7 @@ const Stock = () => {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.125rem' }}>
+            <div style={{ fontSize: '0.7rem', color: theme.text.secondary, marginBottom: '0.125rem' }}>
               Precio Venta
             </div>
             <div style={{ color: '#059669', fontWeight: 600, fontSize: '0.875rem' }}>
@@ -627,7 +631,7 @@ const Stock = () => {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.125rem' }}>
+            <div style={{ fontSize: '0.7rem', color: theme.text.secondary, marginBottom: '0.125rem' }}>
               Margen
             </div>
             <span style={{
@@ -643,10 +647,10 @@ const Stock = () => {
             </span>
           </div>
           <div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.125rem' }}>
+            <div style={{ fontSize: '0.7rem', color: theme.text.secondary, marginBottom: '0.125rem' }}>
               Stock
             </div>
-            <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: theme.text.primary }}>
               {producto.stock}
             </div>
           </div>
@@ -661,8 +665,8 @@ const Stock = () => {
             }}
             style={{
               padding: '0.5rem 0.75rem',
-              backgroundColor: '#3b82f6',
-              color: 'white',
+              backgroundColor: theme.brand.primary,
+              color: theme.text.white,
               border: 'none',
               borderRadius: '0.375rem',
               cursor: 'pointer',
@@ -679,8 +683,8 @@ const Stock = () => {
             onClick={() => confirmarEliminarProducto(producto)}
             style={{
               padding: '0.5rem 0.75rem',
-              backgroundColor: '#ef4444',
-              color: 'white',
+              backgroundColor: theme.brand.danger,
+              color: theme.text.white,
               border: 'none',
               borderRadius: '0.375rem',
               cursor: 'pointer',
@@ -728,7 +732,7 @@ const Stock = () => {
             }
           }
           
-          /* Scrollbar personalizado */
+          /* Scrollbar personalizado con tema */
           div[style*="overflow"] {
             scrollbar-width: thin;
             scrollbar-gutter: stable;
@@ -740,17 +744,17 @@ const Stock = () => {
           }
           
           div[style*="overflow"]::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: ${theme.bg.tertiary};
             border-radius: 10px;
           }
           
           div[style*="overflow"]::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
+            background: ${theme.border.medium};
             border-radius: 10px;
           }
           
           div[style*="overflow"]::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+            background: ${theme.border.dark};
           }
 
           /* Ocultar scrollbar horizontal en mobile */
@@ -762,12 +766,12 @@ const Stock = () => {
         `}
       </style>
       
-      {/* Panel de filtros */}
+      {/* Panel de filtros - CON DARK MODE */}
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: theme.bg.card,
         padding: filtrosColapsados ? '0.75rem' : (isMobile ? '0.75rem' : '1rem'), 
         borderRadius: '0.5rem',
-        border: '2px solid #e5e7eb',
+        border: `2px solid ${theme.border.light}`,
         marginBottom: '0.5rem', 
         flexShrink: 0,
         transition: 'padding 0.3s ease'
@@ -785,7 +789,8 @@ const Stock = () => {
             <h2 style={{ 
               fontSize: isMobile ? '1.25rem' : '1.5rem', 
               fontWeight: 'bold', 
-              margin: 0 
+              margin: 0,
+              color: theme.text.primary
             }}>
               Control de Stock
             </h2>
@@ -793,13 +798,16 @@ const Stock = () => {
               onClick={() => setFiltrosColapsados(!filtrosColapsados)}
               className="btn"
               style={{ 
-                backgroundColor: '#f3f4f6', 
-                color: '#374151',
+                backgroundColor: theme.bg.tertiary, 
+                color: theme.text.primary,
                 padding: '0.375rem 0.75rem',
                 fontSize: '0.875rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.25rem'
+                gap: '0.25rem',
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: 'pointer'
               }}
               title={filtrosColapsados ? 'Mostrar filtros' : 'Ocultar filtros'}
             >
@@ -816,12 +824,12 @@ const Stock = () => {
           }}>
             <span style={{ 
               fontSize: '0.875rem', 
-              color: '#6b7280',
+              color: theme.text.secondary,
               textAlign: isMobile ? 'center' : 'right'
             }}>
               {productos.length} de {total} productos
               {productosSeleccionados.length > 0 && (
-                <span style={{ color: '#3b82f6', fontWeight: 600, marginLeft: '0.5rem' }}>
+                <span style={{ color: theme.brand.primary, fontWeight: 600, marginLeft: '0.5rem' }}>
                   ({productosSeleccionados.length} seleccionados)
                 </span>
               )}
@@ -846,7 +854,11 @@ const Stock = () => {
                     gap: '0.5rem',
                     fontSize: isMobile ? '0.8125rem' : '0.875rem',
                     flex: isMobile ? '1' : 'auto',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    cursor: 'pointer',
+                    fontWeight: 600
                   }}
                 >
                   <TrendingUp size={16} />
@@ -858,15 +870,19 @@ const Stock = () => {
                 onClick={handleRefresh} 
                 className="btn" 
                 style={{ 
-                  backgroundColor: '#6b7280', 
-                  color: 'white', 
+                  backgroundColor: theme.text.secondary, 
+                  color: theme.text.white, 
                   padding: '0.5rem 0.75rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: isMobile ? '0' : '0.5rem',
                   fontSize: isMobile ? '0.8125rem' : '0.875rem',
                   flex: isMobile ? '0' : 'auto',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontWeight: 600
                 }}
               >
                 <RefreshCw size={16} />
@@ -883,7 +899,13 @@ const Stock = () => {
                   gap: isMobile ? '0.25rem' : '0.5rem',
                   fontSize: isMobile ? '0.8125rem' : '0.875rem',
                   flex: isMobile ? '1' : 'auto',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  backgroundColor: theme.brand.primary,
+                  color: theme.text.white,
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontWeight: 600
                 }}
               >
                 <Plus size={16} />
@@ -907,7 +929,7 @@ const Stock = () => {
                 display: 'block', 
                 fontSize: '0.75rem', 
                 fontWeight: 600, 
-                color: '#374151', 
+                color: theme.text.primary, 
                 marginBottom: '0.375rem' 
               }}>
                 Buscar por nombre o categoría
@@ -918,7 +940,7 @@ const Stock = () => {
                   left: '0.75rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: '#9ca3af'
+                  color: theme.text.tertiary
                 }} />
                 <input
                   type="text"
@@ -930,7 +952,11 @@ const Stock = () => {
                     paddingLeft: '2.5rem', 
                     padding: '0.5rem 0.5rem 0.5rem 2.5rem',
                     width: '100%',
-                    fontSize: isMobile ? '16px' : '0.875rem' // Evita zoom en iOS
+                    fontSize: isMobile ? '16px' : '0.875rem',
+                    backgroundColor: theme.input.bg,
+                    border: `1px solid ${theme.input.border}`,
+                    borderRadius: '0.375rem',
+                    color: theme.text.primary
                   }}
                 />
               </div>
@@ -942,7 +968,7 @@ const Stock = () => {
                 display: 'block', 
                 fontSize: '0.75rem', 
                 fontWeight: 600, 
-                color: '#374151', 
+                color: theme.text.primary, 
                 marginBottom: '0.375rem' 
               }}>
                 Categoría
@@ -959,7 +985,11 @@ const Stock = () => {
                   textTransform: 'capitalize', 
                   padding: '0.5rem',
                   width: '100%',
-                  fontSize: isMobile ? '16px' : '0.875rem'
+                  fontSize: isMobile ? '16px' : '0.875rem',
+                  backgroundColor: theme.input.bg,
+                  border: `1px solid ${theme.input.border}`,
+                  borderRadius: '0.375rem',
+                  color: theme.text.primary
                 }}
                 autoComplete="off"
               />
@@ -972,13 +1002,13 @@ const Stock = () => {
                     top: '100%',
                     left: 0,
                     right: 0,
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
+                    backgroundColor: theme.bg.card,
+                    border: `1px solid ${theme.border.light}`,
                     borderRadius: '0.375rem',
                     marginTop: '0.25rem',
                     maxHeight: '200px',
                     overflowY: 'auto',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    boxShadow: theme.shadow.md,
                     zIndex: 1000
                   }}
                 >
@@ -990,34 +1020,34 @@ const Stock = () => {
                         style={{
                           padding: '0.5rem 1rem',
                           cursor: 'pointer',
-                          borderBottom: idx < categoriasFiltradas.length - 1 ? '1px solid #f3f4f6' : 'none',
+                          borderBottom: idx < categoriasFiltradas.length - 1 ? `1px solid ${theme.border.light}` : 'none',
                           transition: 'background-color 0.15s',
                           textTransform: 'capitalize',
-                          backgroundColor: filtroCategoria === cat ? '#eff6ff' : 'white',
+                          backgroundColor: filtroCategoria === cat ? theme.bg.active : theme.bg.card,
                           fontWeight: filtroCategoria === cat ? 600 : 400,
-                          color: filtroCategoria === cat ? '#3b82f6' : '#374151'
+                          color: filtroCategoria === cat ? theme.brand.primary : theme.text.primary
                         }}
                         onMouseEnter={(e) => {
                           if (filtroCategoria !== cat) {
-                            e.currentTarget.style.backgroundColor = '#f9fafb';
+                            e.currentTarget.style.backgroundColor = theme.bg.hover;
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (filtroCategoria !== cat) {
-                            e.currentTarget.style.backgroundColor = 'white';
+                            e.currentTarget.style.backgroundColor = theme.bg.card;
                           }
                         }}
                       >
                         {cat === 'todas' ? 'Todas las categorías' : cat}
                         {filtroCategoria === cat && (
-                          <span style={{ float: 'right', color: '#3b82f6' }}>✓</span>
+                          <span style={{ float: 'right', color: theme.brand.primary }}>✓</span>
                         )}
                       </div>
                     ))
                   ) : (
                     <div style={{ 
                       padding: '0.75rem 1rem', 
-                      color: '#9ca3af',
+                      color: theme.text.tertiary,
                       textAlign: 'center',
                       fontSize: '0.875rem'
                     }}>
@@ -1034,7 +1064,7 @@ const Stock = () => {
                 display: 'block', 
                 fontSize: '0.75rem', 
                 fontWeight: 600, 
-                color: '#374151', 
+                color: theme.text.primary, 
                 marginBottom: '0.375rem' 
               }}>
                 Estado de Stock
@@ -1046,7 +1076,11 @@ const Stock = () => {
                 style={{ 
                   padding: '0.5rem',
                   width: '100%',
-                  fontSize: isMobile ? '16px' : '0.875rem'
+                  fontSize: isMobile ? '16px' : '0.875rem',
+                  backgroundColor: theme.input.bg,
+                  border: `1px solid ${theme.input.border}`,
+                  borderRadius: '0.375rem',
+                  color: theme.text.primary
                 }}
               >
                 <option value="todos">Todos</option>
@@ -1063,15 +1097,18 @@ const Stock = () => {
                 disabled={!busqueda && filtroCategoria === 'todas' && filtroEstado === 'todos'}
                 className="btn"
                 style={{ 
-                  backgroundColor: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? '#ef4444' : '#e5e7eb',
-                  color: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? 'white' : '#9ca3af',
+                  backgroundColor: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? theme.brand.danger : theme.bg.tertiary,
+                  color: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? theme.text.white : theme.text.tertiary,
                   fontSize: '0.75rem',
                   padding: '0.5rem 0.75rem',
                   cursor: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? 'pointer' : 'not-allowed',
                   opacity: (busqueda || filtroCategoria !== 'todas' || filtroEstado !== 'todos') ? 1 : 0.6,
                   transition: 'all 0.2s',
                   whiteSpace: 'nowrap',
-                  width: isMobile ? '100%' : 'auto'
+                  width: isMobile ? '100%' : 'auto',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  fontWeight: 600
                 }}
               >
                 Limpiar filtros
@@ -1083,9 +1120,9 @@ const Stock = () => {
 
       {/* Contenedor de productos - Vista Mobile (Cards) o Desktop (Tabla) */}
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: theme.bg.card,
         borderRadius: '0.5rem',
-        border: '2px solid #e5e7eb',
+        border: `2px solid ${theme.border.light}`,
         flex: 1,
         overflow: 'auto',
         minHeight: 0
@@ -1094,13 +1131,13 @@ const Stock = () => {
           <div style={{ 
             padding: isMobile ? '2rem 1rem' : '3rem', 
             textAlign: 'center',
-            color: '#6b7280'
+            color: theme.text.secondary
           }}>
-            <Search size={isMobile ? 48 : 64} style={{ margin: '0 auto', marginBottom: '1rem', color: '#d1d5db' }} />
-            <p style={{ fontSize: isMobile ? '1rem' : '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+            <Search size={isMobile ? 48 : 64} style={{ margin: '0 auto', marginBottom: '1rem', color: theme.border.medium }} />
+            <p style={{ fontSize: isMobile ? '1rem' : '1.125rem', fontWeight: 600, marginBottom: '0.5rem', color: theme.text.primary }}>
               No se encontraron productos
             </p>
-            <p style={{ fontSize: '0.875rem' }}>
+            <p style={{ fontSize: '0.875rem', color: theme.text.secondary }}>
               Intenta cambiar los filtros de búsqueda
             </p>
           </div>
@@ -1110,8 +1147,8 @@ const Stock = () => {
             {/* Header con checkbox "Seleccionar todos" */}
             <div style={{
               padding: '0.75rem 1rem',
-              backgroundColor: '#f3f4f6',
-              borderBottom: '2px solid #e5e7eb',
+              backgroundColor: theme.bg.tertiary,
+              borderBottom: `2px solid ${theme.border.light}`,
               position: 'sticky',
               top: 0,
               zIndex: 10,
@@ -1136,7 +1173,7 @@ const Stock = () => {
                   opacity: seleccionandoTodos ? 0.5 : 1
                 }}
               />
-              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: theme.text.primary }}>
                 {seleccionandoTodos ? 'Seleccionando...' : 'Seleccionar todos'}
               </span>
             </div>
@@ -1146,11 +1183,11 @@ const Stock = () => {
                 {[...Array(5)].map((_, index) => (
                   <div key={`skeleton-${index}`} style={{
                     padding: '1rem',
-                    borderBottom: '1px solid #e5e7eb'
+                    borderBottom: `1px solid ${theme.border.light}`
                   }}>
                     <div style={{ 
                       height: '1rem', 
-                      backgroundColor: '#e5e7eb', 
+                      backgroundColor: theme.border.medium, 
                       borderRadius: '0.25rem',
                       width: '80%',
                       marginBottom: '0.5rem',
@@ -1158,7 +1195,7 @@ const Stock = () => {
                     }} />
                     <div style={{ 
                       height: '0.875rem', 
-                      backgroundColor: '#e5e7eb', 
+                      backgroundColor: theme.border.medium, 
                       borderRadius: '0.25rem',
                       width: '60%',
                       animation: 'pulse 1.5s ease-in-out infinite'
@@ -1180,7 +1217,7 @@ const Stock = () => {
           // Vista Desktop: Tabla
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto' }}>
             <thead style={{ 
-              backgroundColor: '#f3f4f6',
+              backgroundColor: theme.bg.tertiary,
               position: 'sticky',
               top: 0,
               zIndex: 10
@@ -1206,14 +1243,14 @@ const Stock = () => {
                     title={seleccionandoTodos ? "Seleccionando..." : "Seleccionar todos los filtrados"}
                   />
                 </th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '25%' }}>Producto</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '12%' }}>Categoría</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '10%' }}>P. Costo</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '10%' }}>P. Venta</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '10%' }}>Margen</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '8%' }}>Stock</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '10%' }}>Estado</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '120px' }}>Acciones</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '25%', color: theme.text.primary }}>Producto</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '12%', color: theme.text.primary }}>Categoría</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '10%', color: theme.text.primary }}>P. Costo</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '10%', color: theme.text.primary }}>P. Venta</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '10%', color: theme.text.primary }}>Margen</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '8%', color: theme.text.primary }}>Stock</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '10%', color: theme.text.primary }}>Estado</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 'bold', fontSize: '0.875rem', width: '120px', color: theme.text.primary }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -1235,8 +1272,8 @@ const Stock = () => {
                       key={producto.id} 
                       ref={isLast ? lastProductRef : null}
                       style={{ 
-                        borderTop: '1px solid #e5e7eb',
-                        backgroundColor: isSelected ? '#eff6ff' : 'white'
+                        borderTop: `1px solid ${theme.border.light}`,
+                        backgroundColor: isSelected ? theme.bg.active : theme.bg.card
                       }}
                     >
                       <td style={{ padding: '0.75rem' }}>
@@ -1249,15 +1286,15 @@ const Stock = () => {
                       </td>
                       <td style={{ padding: '0.75rem' }}>
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{producto.nombre}</div>
+                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: theme.text.primary }}>{producto.nombre}</div>
                           {producto.codigo_barras && (
-                            <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>
+                            <div style={{ fontSize: '0.7rem', color: theme.text.secondary }}>
                               CB: {producto.codigo_barras}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td style={{ padding: '0.75rem', textTransform: 'capitalize', fontSize: '0.875rem' }}>
+                      <td style={{ padding: '0.75rem', textTransform: 'capitalize', fontSize: '0.875rem', color: theme.text.primary }}>
                         {producto.categoria || 'Sin categoría'}
                       </td>
                       <td style={{ padding: '0.75rem', color: '#dc2626', fontWeight: 600, fontSize: '0.875rem' }}>
@@ -1278,7 +1315,7 @@ const Stock = () => {
                           {margen}%
                         </span>
                       </td>
-                      <td style={{ padding: '0.75rem', fontWeight: 'bold', fontSize: '0.875rem' }}>{producto.stock}</td>
+                      <td style={{ padding: '0.75rem', fontWeight: 'bold', fontSize: '0.875rem', color: theme.text.primary }}>{producto.stock}</td>
                       <td style={{ padding: '0.75rem' }}>
                         <span style={{
                           backgroundColor: estado.color,
@@ -1300,8 +1337,8 @@ const Stock = () => {
                             }}
                             style={{
                               padding: '0.375rem',
-                              backgroundColor: '#3b82f6',
-                              color: 'white',
+                              backgroundColor: theme.brand.primary,
+                              color: theme.text.white,
                               border: 'none',
                               borderRadius: '0.375rem',
                               cursor: 'pointer'
@@ -1314,8 +1351,8 @@ const Stock = () => {
                             onClick={() => confirmarEliminarProducto(producto)}
                             style={{
                               padding: '0.375rem',
-                              backgroundColor: '#ef4444',
-                              color: 'white',
+                              backgroundColor: theme.brand.danger,
+                              color: theme.text.white,
                               border: 'none',
                               borderRadius: '0.375rem',
                               cursor: 'pointer'
@@ -1338,7 +1375,7 @@ const Stock = () => {
           <div style={{ 
             padding: '1rem', 
             textAlign: 'center',
-            color: '#6b7280'
+            color: theme.text.secondary
           }}>
             <p>Cargando más productos...</p>
           </div>
@@ -1348,7 +1385,7 @@ const Stock = () => {
           <div style={{ 
             padding: '1rem', 
             textAlign: 'center',
-            color: '#6b7280',
+            color: theme.text.secondary,
             fontSize: '0.875rem'
           }}>
             <p>Todos los productos cargados ({total} total)</p>
@@ -1356,7 +1393,7 @@ const Stock = () => {
         )}
       </div>
 
-      {/* Modal de Actualización Masiva */}
+      {/* Modal de Actualización Masiva - CON DARK MODE */}
       {showModalActualizacionMasiva && (
         <div style={{
           position: 'fixed',
@@ -1372,7 +1409,7 @@ const Stock = () => {
           padding: isMobile ? '1rem' : '0'
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             borderRadius: '0.75rem',
             padding: isMobile ? '1.25rem' : '1.5rem',
             maxWidth: isMobile ? '100%' : '700px',
@@ -1380,25 +1417,25 @@ const Stock = () => {
             maxHeight: '90vh',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            boxShadow: theme.shadow.xl,
             animation: 'slideIn 0.2s ease-out',
             overflow: 'hidden'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{
-                backgroundColor: '#eff6ff',
+                backgroundColor: theme.bg.active,
                 padding: isMobile ? '0.5rem' : '0.75rem',
                 borderRadius: '50%',
                 marginRight: '1rem',
                 flexShrink: 0
               }}>
-                <TrendingUp size={isMobile ? 20 : 24} style={{ color: '#3b82f6' }} />
+                <TrendingUp size={isMobile ? 20 : 24} style={{ color: theme.brand.primary }} />
               </div>
               <h3 style={{ 
                 fontSize: isMobile ? '1.125rem' : '1.25rem', 
                 fontWeight: 'bold', 
                 margin: 0, 
-                color: '#111827',
+                color: theme.text.primary,
                 lineHeight: 1.3
               }}>
                 Actualización Masiva de Precios
@@ -1406,12 +1443,12 @@ const Stock = () => {
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+              <p style={{ color: theme.text.secondary, fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                 {productosSeleccionados.length} producto{productosSeleccionados.length !== 1 ? 's' : ''} seleccionado{productosSeleccionados.length !== 1 ? 's' : ''}
               </p>
               
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
                   Porcentaje de Aumento (%)
                 </label>
                 <input
@@ -1423,11 +1460,16 @@ const Stock = () => {
                   className="input"
                   style={{ 
                     width: '100%',
-                    fontSize: isMobile ? '16px' : '0.875rem'
+                    fontSize: isMobile ? '16px' : '0.875rem',
+                    backgroundColor: theme.input.bg,
+                    border: `1px solid ${theme.input.border}`,
+                    borderRadius: '0.375rem',
+                    color: theme.text.primary,
+                    padding: '0.5rem'
                   }}
                   autoFocus
                 />
-                <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                <p style={{ fontSize: '0.75rem', color: theme.text.secondary, marginTop: '0.25rem' }}>
                   Valores negativos reducen el precio (mínimo -50%, máximo 200%)
                 </p>
               </div>
@@ -1438,14 +1480,14 @@ const Stock = () => {
               <div style={{
                 flex: 1,
                 overflowY: 'auto',
-                backgroundColor: '#f9fafb',
+                backgroundColor: theme.bg.secondary,
                 padding: isMobile ? '0.75rem' : '1rem',
                 borderRadius: '0.5rem',
-                border: '1px solid #e5e7eb',
+                border: `1px solid ${theme.border.light}`,
                 marginBottom: '1rem',
                 maxHeight: '400px'
               }}>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#374151' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: theme.text.primary }}>
                   Preview de cambios:
                 </h4>
                 
@@ -1454,10 +1496,10 @@ const Stock = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {productosConCambios.slice(0, 50).map((producto, idx) => (
                       <div key={idx} style={{
-                        backgroundColor: 'white',
+                        backgroundColor: theme.bg.card,
                         padding: '0.75rem',
                         borderRadius: '0.375rem',
-                        border: '1px solid #e5e7eb'
+                        border: `1px solid ${theme.border.light}`
                       }}>
                         <div style={{ 
                           fontSize: '0.8125rem', 
@@ -1465,25 +1507,26 @@ const Stock = () => {
                           marginBottom: '0.5rem',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          color: theme.text.primary
                         }}>
                           {producto.nombre}
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.75rem' }}>
                           <div>
-                            <span style={{ color: '#6b7280' }}>Costo actual:</span>
+                            <span style={{ color: theme.text.secondary }}>Costo actual:</span>
                             <div style={{ color: '#dc2626', fontWeight: 600 }}>
                               ${producto.precio_costo.toFixed(2)}
                             </div>
                           </div>
                           <div>
-                            <span style={{ color: '#6b7280' }}>Costo nuevo:</span>
-                            <div style={{ color: '#3b82f6', fontWeight: 600 }}>
+                            <span style={{ color: theme.text.secondary }}>Costo nuevo:</span>
+                            <div style={{ color: theme.brand.primary, fontWeight: 600 }}>
                               ${producto.nuevo_precio_costo.toFixed(2)}
                             </div>
                           </div>
                           <div style={{ gridColumn: '1 / -1' }}>
-                            <span style={{ color: '#6b7280' }}>Venta nuevo:</span>
+                            <span style={{ color: theme.text.secondary }}>Venta nuevo:</span>
                             <div style={{ color: '#059669', fontWeight: 600 }}>
                               ${producto.nuevo_precio_venta.toFixed(2)}
                             </div>
@@ -1492,7 +1535,7 @@ const Stock = () => {
                       </div>
                     ))}
                     {productosConCambios.length > 50 && (
-                      <div style={{ textAlign: 'center', color: '#6b7280', fontStyle: 'italic', fontSize: '0.75rem' }}>
+                      <div style={{ textAlign: 'center', color: theme.text.secondary, fontStyle: 'italic', fontSize: '0.75rem' }}>
                         ... y {productosConCambios.length - 50} producto{productosConCambios.length - 50 !== 1 ? 's' : ''} más
                       </div>
                     )}
@@ -1501,29 +1544,30 @@ const Stock = () => {
                   // Vista desktop: Tabla
                   <table style={{ width: '100%', fontSize: '0.8125rem' }}>
                     <thead>
-                      <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Producto</th>
-                        <th style={{ textAlign: 'right', padding: '0.5rem', color: '#6b7280' }}>P. Costo Actual</th>
-                        <th style={{ textAlign: 'right', padding: '0.5rem', color: '#6b7280' }}>P. Costo Nuevo</th>
-                        <th style={{ textAlign: 'right', padding: '0.5rem', color: '#6b7280' }}>P. Venta Nuevo</th>
+                      <tr style={{ borderBottom: `2px solid ${theme.border.light}` }}>
+                        <th style={{ textAlign: 'left', padding: '0.5rem', color: theme.text.secondary }}>Producto</th>
+                        <th style={{ textAlign: 'right', padding: '0.5rem', color: theme.text.secondary }}>P. Costo Actual</th>
+                        <th style={{ textAlign: 'right', padding: '0.5rem', color: theme.text.secondary }}>P. Costo Nuevo</th>
+                        <th style={{ textAlign: 'right', padding: '0.5rem', color: theme.text.secondary }}>P. Venta Nuevo</th>
                       </tr>
                     </thead>
                     <tbody>
                       {productosConCambios.slice(0, 50).map((producto, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <tr key={idx} style={{ borderBottom: `1px solid ${theme.border.light}` }}>
                           <td style={{ 
                             padding: '0.5rem', 
                             maxWidth: '200px', 
                             overflow: 'hidden', 
                             textOverflow: 'ellipsis', 
-                            whiteSpace: 'nowrap' 
+                            whiteSpace: 'nowrap',
+                            color: theme.text.primary
                           }}>
                             {producto.nombre}
                           </td>
                           <td style={{ textAlign: 'right', padding: '0.5rem', color: '#dc2626' }}>
                             ${producto.precio_costo.toFixed(2)}
                           </td>
-                          <td style={{ textAlign: 'right', padding: '0.5rem', fontWeight: 600, color: '#3b82f6' }}>
+                          <td style={{ textAlign: 'right', padding: '0.5rem', fontWeight: 600, color: theme.brand.primary }}>
                             ${producto.nuevo_precio_costo.toFixed(2)}
                           </td>
                           <td style={{ textAlign: 'right', padding: '0.5rem', fontWeight: 600, color: '#059669' }}>
@@ -1533,7 +1577,7 @@ const Stock = () => {
                       ))}
                       {productosConCambios.length > 50 && (
                         <tr>
-                          <td colSpan="4" style={{ textAlign: 'center', padding: '0.5rem', color: '#6b7280', fontStyle: 'italic' }}>
+                          <td colSpan="4" style={{ textAlign: 'center', padding: '0.5rem', color: theme.text.secondary, fontStyle: 'italic' }}>
                             ... y {productosConCambios.length - 50} producto{productosConCambios.length - 50 !== 1 ? 's' : ''} más
                           </td>
                         </tr>
@@ -1558,8 +1602,8 @@ const Stock = () => {
                 disabled={aplicandoActualizacion}
                 style={{
                   padding: '0.625rem 1.25rem',
-                  backgroundColor: '#f3f4f6',
-                  color: '#374151',
+                  backgroundColor: theme.bg.tertiary,
+                  color: theme.text.primary,
                   border: 'none',
                   borderRadius: '0.5rem',
                   cursor: aplicandoActualizacion ? 'not-allowed' : 'pointer',
@@ -1569,10 +1613,10 @@ const Stock = () => {
                   opacity: aplicandoActualizacion ? 0.6 : 1
                 }}
                 onMouseEnter={(e) => {
-                  if (!aplicandoActualizacion) e.currentTarget.style.backgroundColor = '#e5e7eb';
+                  if (!aplicandoActualizacion) e.currentTarget.style.backgroundColor = theme.bg.hover;
                 }}
                 onMouseLeave={(e) => {
-                  if (!aplicandoActualizacion) e.currentTarget.style.backgroundColor = '#f3f4f6';
+                  if (!aplicandoActualizacion) e.currentTarget.style.backgroundColor = theme.bg.tertiary;
                 }}
               >
                 Cancelar
@@ -1582,8 +1626,8 @@ const Stock = () => {
                 disabled={!porcentajeAumento || isNaN(parseFloat(porcentajeAumento)) || aplicandoActualizacion}
                 style={{
                   padding: '0.625rem 1.25rem',
-                  backgroundColor: aplicandoActualizacion ? '#9ca3af' : '#3b82f6',
-                  color: 'white',
+                  backgroundColor: aplicandoActualizacion ? theme.text.secondary : theme.brand.primary,
+                  color: theme.text.white,
                   border: 'none',
                   borderRadius: '0.5rem',
                   cursor: (!porcentajeAumento || isNaN(parseFloat(porcentajeAumento)) || aplicandoActualizacion) ? 'not-allowed' : 'pointer',
@@ -1591,14 +1635,6 @@ const Stock = () => {
                   fontSize: '0.875rem',
                   transition: 'background-color 0.2s',
                   opacity: (!porcentajeAumento || isNaN(parseFloat(porcentajeAumento))) ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (porcentajeAumento && !isNaN(parseFloat(porcentajeAumento)) && !aplicandoActualizacion) {
-                    e.currentTarget.style.backgroundColor = '#2563eb';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!aplicandoActualizacion) e.currentTarget.style.backgroundColor = '#3b82f6';
                 }}
               >
                 {aplicandoActualizacion ? 'Aplicando...' : 'Confirmar Actualización'}
@@ -1608,7 +1644,7 @@ const Stock = () => {
         </div>
       )}
 
-      {/* Modal de confirmación de eliminación */}
+      {/* Modal de confirmación de eliminación - CON DARK MODE */}
       {showDeleteModal && productoAEliminar && (
         <div style={{
           position: 'fixed',
@@ -1624,12 +1660,12 @@ const Stock = () => {
           padding: isMobile ? '1rem' : '0'
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             borderRadius: '0.75rem',
             padding: isMobile ? '1.25rem' : '1.5rem',
             maxWidth: isMobile ? '100%' : '450px',
             width: isMobile ? '100%' : '90%',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            boxShadow: theme.shadow.xl,
             animation: 'slideIn 0.2s ease-out'
           }}>
             
@@ -1647,31 +1683,31 @@ const Stock = () => {
                 fontSize: isMobile ? '1.125rem' : '1.25rem', 
                 fontWeight: 'bold', 
                 margin: 0, 
-                color: '#111827' 
+                color: theme.text.primary
               }}>
                 Eliminar Producto
               </h3>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <p style={{ color: '#6b7280', marginBottom: '1rem', lineHeight: '1.5', fontSize: isMobile ? '0.875rem' : '1rem' }}>
+              <p style={{ color: theme.text.secondary, marginBottom: '1rem', lineHeight: '1.5', fontSize: isMobile ? '0.875rem' : '1rem' }}>
                 ¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.
               </p>
               <div style={{
-                backgroundColor: '#f9fafb',
+                backgroundColor: theme.bg.secondary,
                 padding: '1rem',
                 borderRadius: '0.5rem',
-                border: '1px solid #e5e7eb'
+                border: `1px solid ${theme.border.light}`
               }}>
                 <p style={{ 
                   fontWeight: 600, 
                   fontSize: isMobile ? '0.9375rem' : '1rem', 
                   marginBottom: '0.25rem', 
-                  color: '#111827' 
+                  color: theme.text.primary
                 }}>
                   {productoAEliminar.nombre}
                 </p>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', textTransform: 'capitalize' }}>
+                <p style={{ fontSize: '0.875rem', color: theme.text.secondary, textTransform: 'capitalize' }}>
                   {productoAEliminar.categoria || 'Sin categoría'} • Stock: {productoAEliminar.stock}
                 </p>
               </div>
@@ -1690,8 +1726,8 @@ const Stock = () => {
                 }}
                 style={{
                   padding: '0.625rem 1.25rem',
-                  backgroundColor: '#f3f4f6',
-                  color: '#374151',
+                  backgroundColor: theme.bg.tertiary,
+                  color: theme.text.primary,
                   border: 'none',
                   borderRadius: '0.5rem',
                   cursor: 'pointer',
@@ -1699,8 +1735,8 @@ const Stock = () => {
                   fontSize: '0.875rem',
                   transition: 'background-color 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e5e7eb'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.hover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.bg.tertiary}
               >
                 Cancelar
               </button>
@@ -1708,8 +1744,8 @@ const Stock = () => {
                 onClick={handleEliminarProducto}
                 style={{
                   padding: '0.625rem 1.25rem',
-                  backgroundColor: '#dc2626',
-                  color: 'white',
+                  backgroundColor: theme.brand.danger,
+                  color: theme.text.white,
                   border: 'none',
                   borderRadius: '0.5rem',
                   cursor: 'pointer',
@@ -1717,8 +1753,6 @@ const Stock = () => {
                   fontSize: '0.875rem',
                   transition: 'background-color 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
               >
                 Eliminar
               </button>

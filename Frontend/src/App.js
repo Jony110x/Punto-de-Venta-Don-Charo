@@ -13,7 +13,9 @@ import {
   WifiOff,
   RefreshCw,
   Menu,
-  X
+  X,
+  Sun,
+  Moon
 } from "lucide-react";
 import Dashboard from "./components/Dashboard";
 import Ventas from "./components/Ventas";
@@ -23,6 +25,7 @@ import Login from "./components/Login";
 import Profile from "./components/Profile";
 import Users from "./components/Users";
 import { OfflineProvider, useOffline } from "./context/OfflineContext";
+import { useTheme } from "./context/ThemeContext";
 import VentasDetalle from "./components/VentasDetalle";
 
 window.addEventListener('error', e => {
@@ -39,9 +42,10 @@ window.addEventListener('error', e => {
   }
 });
 
-// Banner de estado offline/online - RESPONSIVE
+// Banner de estado offline/online - CON DARK MODE
 const OfflineBanner = () => {
   const { isOnline, isSyncing, ventasPendientes, triggerSync, isLoadingProducts, productosProgress } = useOffline();
+  const { theme } = useTheme();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   if (user.rol !== 'CAJERO' && user.rol !== 'cajero') {
@@ -61,10 +65,10 @@ const OfflineBanner = () => {
         left: 0,
         right: 0,
         zIndex: 9999,
-        backgroundColor: '#dbeafe',
-        color: '#1e40af',
+        backgroundColor: theme.brand.info,
+        color: theme.text.white,
         padding: '0.5rem',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        boxShadow: theme.shadow.md,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -79,19 +83,18 @@ const OfflineBanner = () => {
             📦 Cargando: {productosProgress.current.toLocaleString()} / {productosProgress.total.toLocaleString()} ({percentage}%)
           </span>
         </div>
-        {/* Barra de progreso responsive */}
         <div style={{
           width: '90%',
           maxWidth: '300px',
           height: '6px',
-          backgroundColor: '#e5e7eb',
+          backgroundColor: 'rgba(255,255,255,0.3)',
           borderRadius: '3px',
           overflow: 'hidden'
         }}>
           <div style={{
             width: `${percentage}%`,
             height: '100%',
-            backgroundColor: '#3b82f6',
+            backgroundColor: theme.text.white,
             transition: 'width 0.3s ease'
           }} />
         </div>
@@ -111,6 +114,12 @@ const OfflineBanner = () => {
     return null;
   }
 
+  const bannerBg = isSyncing 
+    ? theme.status.syncing 
+    : !isOnline 
+      ? theme.status.offline 
+      : theme.status.syncing;
+
   return (
     <div style={{
       position: 'fixed',
@@ -118,10 +127,10 @@ const OfflineBanner = () => {
       left: 0,
       right: 0,
       zIndex: 9999,
-      backgroundColor: isOnline ? '#fef3c7' : '#fee2e2',
-      color: isOnline ? '#92400e' : '#991b1b',
+      backgroundColor: bannerBg,
+      color: theme.text.white,
       padding: '0.5rem',
-      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+      boxShadow: theme.shadow.md,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -141,7 +150,7 @@ const OfflineBanner = () => {
           <span style={{ textAlign: 'center' }}>MODO OFFLINE</span>
           {ventasPendientes > 0 && (
             <span style={{ 
-              backgroundColor: '#991b1b', 
+              backgroundColor: 'rgba(0,0,0,0.3)', 
               color: 'white', 
               padding: '0.25rem 0.5rem',
               borderRadius: '9999px',
@@ -160,7 +169,7 @@ const OfflineBanner = () => {
             onClick={triggerSync}
             style={{
               padding: '0.25rem 0.75rem',
-              backgroundColor: '#92400e',
+              backgroundColor: 'rgba(0,0,0,0.3)',
               color: 'white',
               border: 'none',
               borderRadius: '0.375rem',
@@ -199,6 +208,7 @@ function AppContent() {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isOnline, ventasPendientes, precargarProductos } = useOffline(); 
+  const { isDark, toggleTheme, theme } = useTheme();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -246,20 +256,20 @@ function AppContent() {
   }
 
   // ============================================
-  // VISTA CAJERO - RESPONSIVE
+  // VISTA CAJERO - CON DARK MODE
   // ============================================
   if (user.rol === "cajero" || user.rol === "CAJERO") {
     return (
-      <div style={{ minHeight: "100vh", backgroundColor: "#f3f4f6" }}>
+      <div style={{ minHeight: "100vh", backgroundColor: theme.bg.secondary }}>
         <OfflineBanner />
         
         {/* Header CAJERO - Responsive */}
         <div
           style={{
-            background: "linear-gradient(to right, #2563eb, #1e40af)",
-            color: "white",
+            background: theme.bg.header,
+            color: theme.text.white,
             padding: "0.75rem",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            boxShadow: theme.shadow.md,
             marginTop: (!isOnline || ventasPendientes > 0) ? '50px' : '0',
             transition: 'margin-top 0.3s ease'
           }}
@@ -291,6 +301,7 @@ function AppContent() {
                   fontSize: "clamp(0.9rem, 3vw, 1.5rem)", 
                   fontWeight: "bold", 
                   margin: 0,
+                  color: theme.text.white,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap"
@@ -385,6 +396,27 @@ function AppContent() {
                 </a>
               </div>
 
+              {/* Botón Dark Mode Toggle */}
+              <button
+                onClick={toggleTheme}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0.5rem",
+                  backgroundColor: theme.button.transparentBg,
+                  color: theme.text.white,
+                  border: `1px solid ${theme.button.transparentBorder}`,
+                  borderRadius: "0.5rem",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s",
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentHover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentBg}
+              >
+                {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+
               {/* Botón Usuario */}
               <button
                 onClick={() => setShowUserProfile(true)}
@@ -393,15 +425,17 @@ function AppContent() {
                   alignItems: "center",
                   gap: "0.5rem",
                   padding: "0.5rem",
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.2)",
+                  backgroundColor: theme.button.transparentBg,
+                  color: theme.text.white,
+                  border: `1px solid ${theme.button.transparentBorder}`,
                   borderRadius: "0.5rem",
                   cursor: "pointer",
                   fontWeight: 600,
                   fontSize: "0.8rem",
                   transition: "background-color 0.2s",
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentHover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentBg}
               >
                 <UserIcon size={18} />
                 <span className="hide-mobile" style={{ display: 'none' }}>
@@ -417,15 +451,17 @@ function AppContent() {
                   alignItems: "center",
                   gap: "0.5rem",
                   padding: "0.5rem",
-                  backgroundColor: "rgba(255,255,255,0.2)",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
+                  backgroundColor: theme.button.transparentBg,
+                  color: theme.text.white,
+                  border: `1px solid ${theme.button.transparentBorder}`,
                   borderRadius: "0.5rem",
                   cursor: "pointer",
                   fontWeight: 600,
                   fontSize: "0.8rem",
                   transition: "background-color 0.2s",
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentHover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentBg}
               >
                 <LogOut size={16} />
                 <span className="hide-mobile" style={{ display: 'none' }}>Salir</span>
@@ -472,7 +508,7 @@ function AppContent() {
   }
 
   // ============================================
-  // VISTA ADMIN/SUPERADMIN - RESPONSIVE
+  // VISTA ADMIN/SUPERADMIN - CON DARK MODE
   // ============================================
   const menuItems = [
     { id: "dashboard", nombre: "Inicio", icono: Home, componente: Dashboard },
@@ -510,16 +546,16 @@ function AppContent() {
   )?.componente;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f3f4f6" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: theme.bg.secondary }}>
       <OfflineBanner />
       
       {/* Header ADMIN - Responsive */}
       <div
         style={{
-          background: "linear-gradient(to right, #2563eb, #1e40af)",
-          color: "white",
+          background: theme.bg.header,
+          color: theme.text.white,
           padding: "0.75rem",
-          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          boxShadow: theme.shadow.md,
           marginTop: (!isOnline || ventasPendientes > 0) ? '50px' : '0',
           transition: 'margin-top 0.3s ease'
         }}
@@ -551,6 +587,7 @@ function AppContent() {
                 fontSize: "clamp(1rem, 4vw, 2rem)", 
                 fontWeight: "bold", 
                 margin: 0,
+                color: theme.text.white,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap"
@@ -567,6 +604,30 @@ function AppContent() {
 
           {/* User Actions - Responsive */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+            {/* Botón Dark Mode - Desktop */}
+            <button
+              onClick={toggleTheme}
+              className="desktop-theme-btn"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                backgroundColor: theme.button.transparentBg,
+                color: theme.text.white,
+                border: `1px solid ${theme.button.transparentBorder}`,
+                borderRadius: "0.5rem",
+                cursor: "pointer",
+                fontWeight: 600,
+                transition: "background-color 0.2s",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentBg}
+            >
+              {isDark ? <Sun size={20} /> : <Moon size={20} />}
+              <span>{isDark ? 'Oscuro' : 'Claro'}</span>
+            </button>
+
             {/* Menú hamburguesa para móvil */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -576,9 +637,9 @@ function AppContent() {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: "0.5rem",
-                backgroundColor: "rgba(255,255,255,0.1)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.2)",
+                backgroundColor: theme.button.transparentBg,
+                color: theme.text.white,
+                border: `1px solid ${theme.button.transparentBorder}`,
                 borderRadius: "0.5rem",
                 cursor: "pointer",
               }}
@@ -595,14 +656,16 @@ function AppContent() {
                 alignItems: "center",
                 gap: "0.5rem",
                 padding: "0.5rem 1rem",
-                backgroundColor: "rgba(255,255,255,0.1)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.2)",
+                backgroundColor: theme.button.transparentBg,
+                color: theme.text.white,
+                border: `1px solid ${theme.button.transparentBorder}`,
                 borderRadius: "0.5rem",
                 cursor: "pointer",
                 fontWeight: 600,
                 transition: "background-color 0.2s",
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentBg}
             >
               <UserIcon size={20} />
               <span>{user.nombre_completo || user.username}</span>
@@ -616,9 +679,9 @@ function AppContent() {
                 display: "none",
                 alignItems: "center",
                 padding: "0.5rem",
-                backgroundColor: "rgba(255,255,255,0.1)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.2)",
+                backgroundColor: theme.button.transparentBg,
+                color: theme.text.white,
+                border: `1px solid ${theme.button.transparentBorder}`,
                 borderRadius: "0.5rem",
                 cursor: "pointer",
               }}
@@ -634,14 +697,16 @@ function AppContent() {
                 alignItems: "center",
                 gap: "0.5rem",
                 padding: "0.5rem 1rem",
-                backgroundColor: "rgba(255,255,255,0.2)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.3)",
+                backgroundColor: theme.button.transparentBg,
+                color: theme.text.white,
+                border: `1px solid ${theme.button.transparentBorder}`,
                 borderRadius: "0.5rem",
                 cursor: "pointer",
                 fontWeight: 600,
                 transition: "background-color 0.2s",
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.button.transparentBg}
             >
               <LogOut size={18} />
               Salir
@@ -654,8 +719,8 @@ function AppContent() {
       <div
         className="desktop-nav"
         style={{
-          backgroundColor: "white",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+          backgroundColor: theme.bg.primary,
+          boxShadow: theme.shadow.sm,
         }}
       >
         <div
@@ -679,10 +744,10 @@ function AppContent() {
                     padding: "0.75rem 1.25rem",
                     fontWeight: 600,
                     border: "none",
-                    backgroundColor: activo ? "#eff6ff" : "transparent",
-                    color: activo ? "#1e40af" : "#6b7280",
+                    backgroundColor: activo ? theme.bg.active : "transparent",
+                    color: activo ? theme.brand.primary : theme.text.secondary,
                     borderBottom: activo
-                      ? "4px solid #1e40af"
+                      ? `4px solid ${theme.brand.primary}`
                       : "4px solid transparent",
                     cursor: "pointer",
                     transition: "all 0.2s",
@@ -691,7 +756,7 @@ function AppContent() {
                   }}
                   onMouseEnter={(e) => {
                     if (!activo)
-                      e.currentTarget.style.backgroundColor = "#f9fafb";
+                      e.currentTarget.style.backgroundColor = theme.bg.hover;
                   }}
                   onMouseLeave={(e) => {
                     if (!activo)
@@ -735,8 +800,8 @@ function AppContent() {
             right: 0,
             width: "280px",
             maxWidth: "80vw",
-            backgroundColor: "white",
-            boxShadow: "-4px 0 10px rgba(0, 0, 0, 0.15)",
+            backgroundColor: theme.bg.primary,
+            boxShadow: theme.shadow.xl,
             zIndex: 1000,
             maxHeight: "calc(100vh - 60px - var(--banner-height, 0px))",
             overflowY: "auto",
@@ -762,9 +827,9 @@ function AppContent() {
                   padding: "1rem 1.5rem",
                   fontWeight: 600,
                   border: "none",
-                  backgroundColor: activo ? "#eff6ff" : "white",
-                  color: activo ? "#1e40af" : "#6b7280",
-                  borderLeft: activo ? "4px solid #1e40af" : "4px solid transparent",
+                  backgroundColor: activo ? theme.bg.active : theme.bg.primary,
+                  color: activo ? theme.brand.primary : theme.text.secondary,
+                  borderLeft: activo ? `4px solid ${theme.brand.primary}` : "4px solid transparent",
                   cursor: "pointer",
                   transition: "all 0.2s",
                   fontSize: "1rem",
@@ -788,12 +853,12 @@ function AppContent() {
               padding: "1rem 1.5rem",
               fontWeight: 600,
               border: "none",
-              backgroundColor: "#fee2e2",
-              color: "#991b1b",
+              backgroundColor: theme.bg.primary,
+              color: theme.brand.danger,
               cursor: "pointer",
               fontSize: "1rem",
               textAlign: "left",
-              borderTop: "1px solid #e5e7eb"
+              borderTop: `1px solid ${theme.border.light}`
             }}
           >
             <LogOut size={20} />
@@ -828,7 +893,8 @@ function AppContent() {
           }
           
           .desktop-user-btn,
-          .desktop-logout-btn {
+          .desktop-logout-btn,
+          .desktop-theme-btn {
             display: none !important;
           }
           
@@ -900,6 +966,11 @@ function AppContent() {
         /* Ajuste para banner en altura total */
         :root {
           --banner-height: 0px;
+        }
+        
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

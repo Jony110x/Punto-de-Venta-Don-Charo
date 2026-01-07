@@ -3,9 +3,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { DollarSign, Package, ShoppingCart, AlertTriangle, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { getDashboardHoy, getProductosStockBajo, getProductosStockCritico } from '../api/api';
 import { useToast } from '../Toast';
+import { useTheme } from '../context/ThemeContext';
 
 const Dashboard = () => {
   const toast = useToast();
+  const { theme } = useTheme();
   
   // Estados principales
   const [stats, setStats] = useState({
@@ -194,17 +196,17 @@ const Dashboard = () => {
   // Skeleton para tarjetas
   const StatCardSkeleton = () => (
     <div style={{
-      backgroundColor: '#f3f4f6',
+      backgroundColor: theme.bg.tertiary,
       padding: 'clamp(0.75rem, 2vw, 1.25rem)',
       borderRadius: '0.5rem',
-      border: '2px solid #e5e7eb'
+      border: `2px solid ${theme.border.light}`
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ 
             height: '0.875rem',
             width: '60%',
-            backgroundColor: '#e5e7eb',
+            backgroundColor: theme.border.medium,
             borderRadius: '0.25rem',
             marginBottom: '0.75rem',
             animation: 'pulse 1.5s ease-in-out infinite'
@@ -212,7 +214,7 @@ const Dashboard = () => {
           <div style={{ 
             height: 'clamp(1.25rem, 4vw, 1.75rem)',
             width: '80%',
-            backgroundColor: '#e5e7eb',
+            backgroundColor: theme.border.medium,
             borderRadius: '0.25rem',
             animation: 'pulse 1.5s ease-in-out infinite'
           }} />
@@ -220,7 +222,7 @@ const Dashboard = () => {
         <div style={{ 
           width: 'clamp(32px, 8vw, 44px)',
           height: 'clamp(32px, 8vw, 44px)',
-          backgroundColor: '#e5e7eb',
+          backgroundColor: theme.border.medium,
           borderRadius: '0.375rem',
           animation: 'pulse 1.5s ease-in-out infinite',
           flexShrink: 0
@@ -236,22 +238,22 @@ const Dashboard = () => {
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: 'clamp(0.5rem, 2vw, 0.75rem)',
-      backgroundColor: '#f9fafb',
+      backgroundColor: theme.bg.hover,
       borderRadius: '0.375rem',
-      border: '1px solid #e5e7eb',
+      border: `1px solid ${theme.border.light}`,
       gap: '0.5rem'
     }}>
       <div style={{ 
         height: '1rem',
         flex: 1,
-        backgroundColor: '#e5e7eb',
+        backgroundColor: theme.border.medium,
         borderRadius: '0.25rem',
         animation: 'pulse 1.5s ease-in-out infinite'
       }} />
       <div style={{ 
         height: '1.5rem',
         width: 'clamp(60px, 25%, 100px)',
-        backgroundColor: '#e5e7eb',
+        backgroundColor: theme.border.medium,
         borderRadius: '0.25rem',
         animation: 'pulse 1.5s ease-in-out infinite',
         flexShrink: 0
@@ -294,7 +296,8 @@ const Dashboard = () => {
         fontWeight: 'bold', 
         marginBottom: 'clamp(0.75rem, 2vw, 1rem)', 
         flexShrink: 0,
-        lineHeight: 1.2
+        lineHeight: 1.2,
+        color: theme.text.primary
       }}>
         Panel de Control - Hoy
       </h2>
@@ -470,16 +473,16 @@ const Dashboard = () => {
           <>
             {/* Skeletons */}
             <div style={{
-              backgroundColor: '#f3f4f6',
+              backgroundColor: theme.bg.tertiary,
               padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
-              border: '2px solid #e5e7eb',
+              border: `2px solid ${theme.border.light}`,
               flexShrink: 0
             }}>
               <div style={{ 
                 height: 'clamp(1.25rem, 3vw, 1.5rem)',
                 width: '60%',
-                backgroundColor: '#e5e7eb',
+                backgroundColor: theme.border.medium,
                 borderRadius: '0.25rem',
                 marginBottom: '1rem',
                 animation: 'pulse 1.5s ease-in-out infinite'
@@ -492,16 +495,16 @@ const Dashboard = () => {
             </div>
 
             <div style={{
-              backgroundColor: '#f3f4f6',
+              backgroundColor: theme.bg.tertiary,
               padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
-              border: '2px solid #e5e7eb',
+              border: `2px solid ${theme.border.light}`,
               flexShrink: 0
             }}>
               <div style={{ 
                 height: 'clamp(1.25rem, 3vw, 1.5rem)',
                 width: '60%',
-                backgroundColor: '#e5e7eb',
+                backgroundColor: theme.border.medium,
                 borderRadius: '0.25rem',
                 marginBottom: '1rem',
                 animation: 'pulse 1.5s ease-in-out infinite'
@@ -677,9 +680,9 @@ const Dashboard = () => {
             {/* Sección de productos con stock bajo */}
             {(totalBajo > 0) && (
               <div style={{
-                backgroundColor: 'white',
+                backgroundColor: theme.bg.card,
                 borderRadius: '0.5rem',
-                border: '2px solid #e5e7eb',
+                border: `2px solid ${theme.border.light}`,
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
@@ -705,7 +708,7 @@ const Dashboard = () => {
                     flexShrink: 0,
                     gap: '0.5rem'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.hover}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
@@ -714,6 +717,7 @@ const Dashboard = () => {
                       fontSize: 'clamp(0.875rem, 3vw, 1.25rem)', 
                       fontWeight: 'bold', 
                       margin: 0,
+                      color: theme.text.primary,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap'
@@ -733,9 +737,9 @@ const Dashboard = () => {
                     </span>
                   </div>
                   {bajoColapsado ? (
-                    <ChevronDown size={window.innerWidth < 640 ? 20 : 24} style={{ color: '#6b7280', flexShrink: 0 }} />
+                    <ChevronDown size={window.innerWidth < 640 ? 20 : 24} style={{ color: theme.text.secondary, flexShrink: 0 }} />
                   ) : (
-                    <ChevronUp size={window.innerWidth < 640 ? 20 : 24} style={{ color: '#6b7280', flexShrink: 0 }} />
+                    <ChevronUp size={window.innerWidth < 640 ? 20 : 24} style={{ color: theme.text.secondary, flexShrink: 0 }} />
                   )}
                 </div>
 
@@ -844,7 +848,7 @@ const Dashboard = () => {
                   color: '#065f46',
                   margin: 0
                 }}>
-                  ✅ No hay productos con stock bajo o crítico
+                  No hay productos con stock bajo o crítico
                 </p>
               </div>
             )}

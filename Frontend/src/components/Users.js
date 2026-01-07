@@ -4,9 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Users as UsersIcon, UserPlus, Edit2, Trash2, X, Save, Shield, CheckCircle, XCircle, Mail, User, Key, AlertTriangle } from 'lucide-react';
 import { getAllUsers, createUser, updateUser, deleteUser } from '../api/api';
 import { useToast } from '../Toast';
+import { useTheme } from '../context/ThemeContext';
 
 const Users = () => {
   const toast = useToast();
+  const { theme } = useTheme();
+  
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -224,15 +227,15 @@ const Users = () => {
     });
   };
 
-  // Componente de tarjeta de usuario para mobile
+  // Componente de tarjeta de usuario para mobile - CON DARK MODE
   const UserCard = ({ user }) => {
     const roleBadge = getRoleBadge(user.rol);
     
     return (
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: theme.bg.card,
         padding: '1rem',
-        borderBottom: '1px solid #e5e7eb'
+        borderBottom: `1px solid ${theme.border.light}`
       }}>
         {/* Header de la tarjeta */}
         <div style={{ 
@@ -248,13 +251,14 @@ const Users = () => {
               gap: '0.5rem',
               marginBottom: '0.25rem'
             }}>
-              <User size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+              <User size={16} style={{ color: theme.text.secondary, flexShrink: 0 }} />
               <span style={{ 
                 fontWeight: 600, 
                 fontSize: '0.9375rem',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                color: theme.text.primary
               }}>
                 {user.username}
               </span>
@@ -265,10 +269,10 @@ const Users = () => {
               gap: '0.5rem',
               marginBottom: '0.5rem'
             }}>
-              <Mail size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+              <Mail size={14} style={{ color: theme.text.secondary, flexShrink: 0 }} />
               <span style={{ 
                 fontSize: '0.8125rem', 
-                color: '#6b7280',
+                color: theme.text.secondary,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
@@ -324,15 +328,15 @@ const Users = () => {
           marginBottom: '0.75rem'
         }}>
           <div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.125rem' }}>
+            <div style={{ fontSize: '0.7rem', color: theme.text.secondary, marginBottom: '0.125rem' }}>
               Nombre Completo
             </div>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 500 }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: theme.text.primary }}>
               {user.nombre_completo || '-'}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.125rem' }}>
+            <div style={{ fontSize: '0.7rem', color: theme.text.secondary, marginBottom: '0.125rem' }}>
               Rol
             </div>
             <span style={{
@@ -354,10 +358,10 @@ const Users = () => {
 
         {/* Último acceso */}
         <div style={{ marginBottom: '0.75rem' }}>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.125rem' }}>
+          <div style={{ fontSize: '0.7rem', color: theme.text.secondary, marginBottom: '0.125rem' }}>
             Último Acceso
           </div>
-          <div style={{ fontSize: '0.8125rem', color: '#374151' }}>
+          <div style={{ fontSize: '0.8125rem', color: theme.text.primary }}>
             {formatDate(user.ultimo_acceso)}
           </div>
         </div>
@@ -414,7 +418,7 @@ const Users = () => {
   // Pantalla de carga
   if (loading) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <div style={{ padding: '2rem', textAlign: 'center', color: theme.text.primary }}>
         <p>Cargando usuarios...</p>
       </div>
     );
@@ -458,17 +462,18 @@ const Users = () => {
           alignItems: 'center', 
           gap: isMobile ? '0.75rem' : '1rem' 
         }}>
-          <UsersIcon size={isMobile ? 28 : 32} style={{ color: '#3b82f6', flexShrink: 0 }} />
+          <UsersIcon size={isMobile ? 28 : 32} style={{ color: theme.brand.primary, flexShrink: 0 }} />
           <div>
             <h2 style={{ 
               fontSize: isMobile ? '1.5rem' : '1.875rem', 
               fontWeight: 'bold', 
-              margin: 0 
+              margin: 0,
+              color: theme.text.primary
             }}>
               Gestión de Usuarios
             </h2>
             <p style={{ 
-              color: '#6b7280', 
+              color: theme.text.secondary, 
               margin: '0.25rem 0 0 0',
               fontSize: isMobile ? '0.875rem' : '1rem'
             }}>
@@ -485,8 +490,8 @@ const Users = () => {
             justifyContent: 'center',
             gap: '0.5rem',
             padding: isMobile ? '0.75rem 1rem' : '0.75rem 1.5rem',
-            backgroundColor: '#10b981',
-            color: 'white',
+            backgroundColor: theme.brand.success,
+            color: theme.text.white,
             border: 'none',
             borderRadius: '0.5rem',
             fontWeight: 600,
@@ -494,8 +499,6 @@ const Users = () => {
             transition: 'background-color 0.2s',
             fontSize: isMobile ? '0.9375rem' : '1rem'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#059669'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#10b981'}
         >
           <UserPlus size={isMobile ? 18 : 20} />
           Nuevo Usuario
@@ -504,9 +507,9 @@ const Users = () => {
 
       {/* Contenedor de usuarios - Vista Mobile (Cards) o Desktop (Tabla) */}
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: theme.bg.card,
         borderRadius: '0.75rem',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        boxShadow: theme.shadow.sm,
         overflow: 'hidden',
         flex: isMobile ? 1 : 'none',
         display: 'flex',
@@ -522,9 +525,9 @@ const Users = () => {
               <div style={{
                 padding: '3rem 1rem',
                 textAlign: 'center',
-                color: '#9ca3af'
+                color: theme.text.tertiary
               }}>
-                <UsersIcon size={48} style={{ margin: '0 auto', marginBottom: '1rem', color: '#d1d5db' }} />
+                <UsersIcon size={48} style={{ margin: '0 auto', marginBottom: '1rem', color: theme.border.medium }} />
                 <p>No hay usuarios registrados</p>
               </div>
             ) : (
@@ -537,7 +540,7 @@ const Users = () => {
           // Vista Desktop: Tabla
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead style={{ backgroundColor: '#f9fafb' }}>
+              <thead style={{ backgroundColor: theme.bg.tertiary }}>
                 <tr>
                   <th style={{
                     padding: '0.75rem 1.5rem',
@@ -545,7 +548,7 @@ const Users = () => {
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    color: '#6b7280',
+                    color: theme.text.secondary,
                     letterSpacing: '0.05em'
                   }}>Usuario</th>
                   <th style={{
@@ -554,7 +557,7 @@ const Users = () => {
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    color: '#6b7280',
+                    color: theme.text.secondary,
                     letterSpacing: '0.05em'
                   }}>Email</th>
                   <th style={{
@@ -563,7 +566,7 @@ const Users = () => {
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    color: '#6b7280',
+                    color: theme.text.secondary,
                     letterSpacing: '0.05em'
                   }}>Nombre Completo</th>
                   <th style={{
@@ -572,7 +575,7 @@ const Users = () => {
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    color: '#6b7280',
+                    color: theme.text.secondary,
                     letterSpacing: '0.05em'
                   }}>Rol</th>
                   <th style={{
@@ -581,7 +584,7 @@ const Users = () => {
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    color: '#6b7280',
+                    color: theme.text.secondary,
                     letterSpacing: '0.05em'
                   }}>Estado</th>
                   <th style={{
@@ -590,7 +593,7 @@ const Users = () => {
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    color: '#6b7280',
+                    color: theme.text.secondary,
                     letterSpacing: '0.05em'
                   }}>Último Acceso</th>
                   <th style={{
@@ -599,7 +602,7 @@ const Users = () => {
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    color: '#6b7280',
+                    color: theme.text.secondary,
                     letterSpacing: '0.05em'
                   }}>Acciones</th>
                 </tr>
@@ -610,7 +613,7 @@ const Users = () => {
                     <td colSpan="7" style={{
                       padding: '3rem',
                       textAlign: 'center',
-                      color: '#9ca3af'
+                      color: theme.text.tertiary
                     }}>
                       No hay usuarios registrados
                     </td>
@@ -620,34 +623,34 @@ const Users = () => {
                     const roleBadge = getRoleBadge(user.rol);
                     return (
                       <tr key={user.id} style={{
-                        borderTop: '1px solid #f3f4f6',
+                        borderTop: `1px solid ${theme.border.light}`,
                         transition: 'background-color 0.15s'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.hover}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         
                         <td style={{
                           padding: '1rem 1.5rem',
                           fontSize: '0.875rem',
-                          color: '#111827'
+                          color: theme.text.primary
                         }}>
                           <span style={{ fontWeight: 600 }}>{user.username}</span>
                         </td>
                         <td style={{
                           padding: '1rem 1.5rem',
                           fontSize: '0.875rem',
-                          color: '#111827'
+                          color: theme.text.primary
                         }}>{user.email}</td>
                         <td style={{
                           padding: '1rem 1.5rem',
                           fontSize: '0.875rem',
-                          color: '#111827'
+                          color: theme.text.primary
                         }}>{user.nombre_completo || '-'}</td>
                         <td style={{
                           padding: '1rem 1.5rem',
                           fontSize: '0.875rem',
-                          color: '#111827'
+                          color: theme.text.primary
                         }}>
                           <span style={{
                             backgroundColor: roleBadge.bg,
@@ -667,7 +670,7 @@ const Users = () => {
                         <td style={{
                           padding: '1rem 1.5rem',
                           fontSize: '0.875rem',
-                          color: '#111827'
+                          color: theme.text.primary
                         }}>
                           {user.activo ? (
                             <span style={{
@@ -696,16 +699,16 @@ const Users = () => {
                         <td style={{
                           padding: '1rem 1.5rem',
                           fontSize: '0.875rem',
-                          color: '#111827'
+                          color: theme.text.primary
                         }}>
-                          <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                          <span style={{ fontSize: '0.875rem', color: theme.text.secondary }}>
                             {formatDate(user.ultimo_acceso)}
                           </span>
                         </td>
                         <td style={{
                           padding: '1rem 1.5rem',
                           fontSize: '0.875rem',
-                          color: '#111827'
+                          color: theme.text.primary
                         }}>
                           <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button
@@ -754,7 +757,7 @@ const Users = () => {
         )}
       </div>
 
-      {/* Modal para crear/editar usuario */}
+      {/* Modal para crear/editar usuario - CON DARK MODE */}
       {showModal && (
         <div style={{
           position: 'fixed',
@@ -762,7 +765,7 @@ const Users = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -770,23 +773,23 @@ const Users = () => {
           padding: isMobile ? '1rem' : '0'
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             borderRadius: '0.75rem',
             width: isMobile ? '100%' : '90%',
             maxWidth: isMobile ? '100%' : '600px',
             maxHeight: isMobile ? '100%' : '90vh',
             overflow: 'auto',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            boxShadow: theme.shadow.xl,
             animation: 'slideIn 0.2s ease-out'
           }}>
             {/* Header del modal */}
             <div style={{
               padding: isMobile ? '1rem' : '1.5rem',
-              borderBottom: '1px solid #e5e7eb',
+              borderBottom: `1px solid ${theme.border.light}`,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              backgroundColor: '#f9fafb',
+              backgroundColor: theme.bg.secondary,
               position: 'sticky',
               top: 0,
               zIndex: 1
@@ -794,7 +797,8 @@ const Users = () => {
               <h3 style={{ 
                 fontSize: isMobile ? '1.125rem' : '1.25rem', 
                 fontWeight: 'bold', 
-                margin: 0 
+                margin: 0,
+                color: theme.text.primary
               }}>
                 {modalMode === 'create' ? 'Crear Nuevo Usuario' : 'Editar Usuario'}
               </h3>
@@ -806,9 +810,10 @@ const Users = () => {
                   background: 'none',
                   padding: '0.5rem',
                   borderRadius: '0.375rem',
-                  transition: 'background-color 0.2s'
+                  transition: 'background-color 0.2s',
+                  color: theme.text.secondary
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.hover}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <X size={isMobile ? 20 : 24} />
@@ -824,9 +829,9 @@ const Users = () => {
                     marginBottom: '0.5rem',
                     fontWeight: 600,
                     fontSize: '0.875rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>
-                    Nombre de Usuario <span style={{ color: '#ef4444' }}>*</span>
+                    Nombre de Usuario <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -837,9 +842,11 @@ const Users = () => {
                     style={{
                       width: '100%',
                       padding: '0.75rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: isMobile ? '16px' : '1rem'
+                      fontSize: isMobile ? '16px' : '1rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                     placeholder="usuario123"
                   />
@@ -851,9 +858,9 @@ const Users = () => {
                     marginBottom: '0.5rem',
                     fontWeight: 600,
                     fontSize: '0.875rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>
-                    Email <span style={{ color: '#ef4444' }}>*</span>
+                    Email <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <input
                     type="email"
@@ -864,9 +871,11 @@ const Users = () => {
                     style={{
                       width: '100%',
                       padding: '0.75rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: isMobile ? '16px' : '1rem'
+                      fontSize: isMobile ? '16px' : '1rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                     placeholder="usuario@ejemplo.com"
                   />
@@ -878,7 +887,7 @@ const Users = () => {
                     marginBottom: '0.5rem',
                     fontWeight: 600,
                     fontSize: '0.875rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>Nombre Completo</label>
                   <input
                     type="text"
@@ -888,9 +897,11 @@ const Users = () => {
                     style={{
                       width: '100%',
                       padding: '0.75rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: isMobile ? '16px' : '1rem'
+                      fontSize: isMobile ? '16px' : '1rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                     placeholder="Juan Pérez"
                   />
@@ -902,9 +913,9 @@ const Users = () => {
                     marginBottom: '0.5rem',
                     fontWeight: 600,
                     fontSize: '0.875rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>
-                    Rol <span style={{ color: '#ef4444' }}>*</span>
+                    Rol <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <select
                     name="rol"
@@ -914,9 +925,11 @@ const Users = () => {
                     style={{
                       width: '100%',
                       padding: '0.75rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: isMobile ? '16px' : '1rem'
+                      fontSize: isMobile ? '16px' : '1rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                   >
                     <option value="CAJERO">Cajero</option>
@@ -929,7 +942,8 @@ const Users = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    color: theme.text.primary
                   }}>
                     <input
                       type="checkbox"
@@ -961,9 +975,9 @@ const Users = () => {
                     marginBottom: '0.5rem',
                     fontWeight: 600,
                     fontSize: '0.875rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>
-                    Contraseña {modalMode === 'create' && <span style={{ color: '#ef4444' }}>*</span>}
+                    Contraseña {modalMode === 'create' && <span style={{ color: theme.brand.danger }}>*</span>}
                   </label>
                   <input
                     type="password"
@@ -974,9 +988,11 @@ const Users = () => {
                     style={{
                       width: '100%',
                       padding: '0.75rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: isMobile ? '16px' : '1rem'
+                      fontSize: isMobile ? '16px' : '1rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                     placeholder={modalMode === 'edit' ? 'Dejar vacío para no cambiar' : 'Mínimo 4 caracteres'}
                   />
@@ -988,9 +1004,9 @@ const Users = () => {
                     marginBottom: '0.5rem',
                     fontWeight: 600,
                     fontSize: '0.875rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>
-                    Confirmar Contraseña {modalMode === 'create' && <span style={{ color: '#ef4444' }}>*</span>}
+                    Confirmar Contraseña {modalMode === 'create' && <span style={{ color: theme.brand.danger }}>*</span>}
                   </label>
                   <input
                     type="password"
@@ -1001,9 +1017,11 @@ const Users = () => {
                     style={{
                       width: '100%',
                       padding: '0.75rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: isMobile ? '16px' : '1rem'
+                      fontSize: isMobile ? '16px' : '1rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                     placeholder={modalMode === 'edit' ? 'Dejar vacío para no cambiar' : 'Repite la contraseña'}
                   />
@@ -1024,8 +1042,8 @@ const Users = () => {
                   style={{
                     flex: 1,
                     padding: '0.75rem',
-                    backgroundColor: '#f3f4f6',
-                    color: '#374151',
+                    backgroundColor: theme.bg.tertiary,
+                    color: theme.text.primary,
                     border: 'none',
                     borderRadius: '0.5rem',
                     fontWeight: 600,
@@ -1034,10 +1052,10 @@ const Users = () => {
                     transition: 'background-color 0.2s'
                   }}
                   onMouseEnter={(e) => {
-                    if (!saving) e.currentTarget.style.backgroundColor = '#e5e7eb';
+                    if (!saving) e.currentTarget.style.backgroundColor = theme.bg.hover;
                   }}
                   onMouseLeave={(e) => {
-                    if (!saving) e.currentTarget.style.backgroundColor = '#f3f4f6';
+                    if (!saving) e.currentTarget.style.backgroundColor = theme.bg.tertiary;
                   }}
                 >
                   Cancelar
@@ -1048,8 +1066,8 @@ const Users = () => {
                   style={{
                     flex: 1,
                     padding: '0.75rem',
-                    backgroundColor: saving ? '#9ca3af' : '#10b981',
-                    color: 'white',
+                    backgroundColor: saving ? theme.text.secondary : theme.brand.success,
+                    color: theme.text.white,
                     border: 'none',
                     borderRadius: '0.5rem',
                     fontWeight: 600,
@@ -1061,12 +1079,6 @@ const Users = () => {
                     gap: '0.5rem',
                     transition: 'background-color 0.2s'
                   }}
-                  onMouseEnter={(e) => {
-                    if (!saving) e.currentTarget.style.backgroundColor = '#059669';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!saving) e.currentTarget.style.backgroundColor = '#10b981';
-                  }}
                 >
                   <Save size={18} />
                   {saving ? 'Guardando...' : modalMode === 'create' ? 'Crear Usuario' : 'Guardar Cambios'}
@@ -1077,7 +1089,7 @@ const Users = () => {
         </div>
       )}
 
-      {/* Modal de confirmación de eliminación */}
+      {/* Modal de confirmación de eliminación - CON DARK MODE */}
       {showDeleteModal && userToDelete && (
         <div style={{
           position: 'fixed',
@@ -1085,7 +1097,7 @@ const Users = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -1093,12 +1105,12 @@ const Users = () => {
           padding: isMobile ? '1rem' : '0'
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             borderRadius: '0.75rem',
             padding: isMobile ? '1.25rem' : '1.5rem',
             maxWidth: isMobile ? '100%' : '450px',
             width: isMobile ? '100%' : '90%',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            boxShadow: theme.shadow.xl,
             animation: 'slideIn 0.2s ease-out'
           }}>
             
@@ -1116,7 +1128,7 @@ const Users = () => {
                 fontSize: isMobile ? '1.125rem' : '1.25rem', 
                 fontWeight: 'bold', 
                 margin: 0, 
-                color: '#111827' 
+                color: theme.text.primary
               }}>
                 Eliminar Usuario
               </h3>
@@ -1124,7 +1136,7 @@ const Users = () => {
 
             <div style={{ marginBottom: '1.5rem' }}>
               <p style={{ 
-                color: '#6b7280', 
+                color: theme.text.secondary, 
                 marginBottom: '1rem', 
                 lineHeight: '1.5',
                 fontSize: isMobile ? '0.875rem' : '1rem'
@@ -1132,20 +1144,20 @@ const Users = () => {
                 ¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.
               </p>
               <div style={{
-                backgroundColor: '#f9fafb',
+                backgroundColor: theme.bg.secondary,
                 padding: '1rem',
                 borderRadius: '0.5rem',
-                border: '1px solid #e5e7eb'
+                border: `1px solid ${theme.border.light}`
               }}>
                 <p style={{ 
                   fontWeight: 600, 
                   fontSize: isMobile ? '0.9375rem' : '1rem', 
                   marginBottom: '0.25rem', 
-                  color: '#111827' 
+                  color: theme.text.primary
                 }}>
                   {userToDelete.username}
                 </p>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+                <p style={{ fontSize: '0.875rem', color: theme.text.secondary, margin: 0 }}>
                   {userToDelete.email}
                 </p>
               </div>
@@ -1164,8 +1176,8 @@ const Users = () => {
                 style={{
                   flex: 1,
                   padding: '0.625rem 1.25rem',
-                  backgroundColor: '#f3f4f6',
-                  color: '#374151',
+                  backgroundColor: theme.bg.tertiary,
+                  color: theme.text.primary,
                   border: 'none',
                   borderRadius: '0.5rem',
                   cursor: 'pointer',
@@ -1173,8 +1185,8 @@ const Users = () => {
                   fontSize: '0.875rem',
                   transition: 'background-color 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e5e7eb'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.hover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.bg.tertiary}
               >
                 Cancelar
               </button>
@@ -1183,8 +1195,8 @@ const Users = () => {
                 style={{
                   flex: 1,
                   padding: '0.625rem 1.25rem',
-                  backgroundColor: '#dc2626',
-                  color: 'white',
+                  backgroundColor: theme.brand.danger,
+                  color: theme.text.white,
                   border: 'none',
                   borderRadius: '0.5rem',
                   cursor: 'pointer',
@@ -1192,8 +1204,6 @@ const Users = () => {
                   fontSize: '0.875rem',
                   transition: 'background-color 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
               >
                 Eliminar
               </button>

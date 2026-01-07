@@ -3,9 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { X, User as UserIcon, Lock, Mail, Shield, Save, Edit2 } from 'lucide-react';
 import { getUserProfile, updateUserProfile } from '../api/api';
 import { useToast } from '../Toast';
+import { useTheme } from '../context/ThemeContext';
 
 const Profile = ({ onClose, currentUser, onUserUpdate }) => {
   const toast = useToast();
+  const { theme } = useTheme();
+  
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
@@ -139,19 +142,20 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000
       }}>
         <div style={{
-          backgroundColor: 'white',
+          backgroundColor: theme.bg.card,
           borderRadius: '0.5rem',
           padding: '2rem',
-          textAlign: 'center'
+          textAlign: 'center',
+          boxShadow: theme.shadow.lg
         }}>
-          <p>Cargando...</p>
+          <p style={{ color: theme.text.primary }}>Cargando...</p>
         </div>
       </div>
     );
@@ -166,44 +170,44 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000
     }}>
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: theme.bg.card,
         borderRadius: '0.75rem',
         width: '90%',
         maxWidth: '600px',
         maxHeight: '90vh',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+        boxShadow: theme.shadow.xl
       }}>
         {/* Header */}
         <div style={{
           padding: '0.5rem',
-          borderBottom: '1px solid #e5e7eb',
+          borderBottom: `1px solid ${theme.border.light}`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          backgroundColor: '#f9fafb',
+          backgroundColor: theme.bg.secondary,
           flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{
-              backgroundColor: '#3b82f6',
+              backgroundColor: theme.brand.primary,
               padding: '0.5rem',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <UserIcon size={24} style={{ color: 'white' }} />
+              <UserIcon size={24} style={{ color: theme.text.white }} />
             </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0, color: theme.text.primary }}>
               Mi Perfil
             </h2>
           </div>
@@ -215,9 +219,10 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
               background: 'none',
               padding: '0.5rem',
               borderRadius: '0.375rem',
-              transition: 'background-color 0.2s'
+              transition: 'background-color 0.2s',
+              color: theme.text.secondary
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.bg.hover}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <X size={24} />
@@ -240,28 +245,29 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                 alignItems: 'center',
                 marginBottom: '1.5rem',
                 padding: '1rem',
-                backgroundColor: '#f9fafb',
+                backgroundColor: theme.bg.secondary,
                 borderRadius: '0.5rem'
               }}>
                 <div style={{
                   width: '70px',
                   height: '70px',
                   borderRadius: '50%',
-                  backgroundColor: '#3b82f6',
+                  backgroundColor: theme.brand.primary,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '0.75rem',
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  boxShadow: theme.shadow.md
                 }}>
-                  <UserIcon size={36} style={{ color: 'white' }} />
+                  <UserIcon size={36} style={{ color: theme.text.white }} />
                 </div>
                 <h3 style={{
                   fontSize: '1.25rem',
                   fontWeight: 'bold',
                   marginBottom: '0.5rem',
                   textAlign: 'center',
-                  margin: '0 0 0.5rem 0'
+                  margin: '0 0 0.5rem 0',
+                  color: theme.text.primary
                 }}>
                   {userData?.nombre_completo || userData?.username}
                 </h3>
@@ -285,9 +291,9 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{
                   padding: '0.75rem',
-                  backgroundColor: '#f9fafb',
+                  backgroundColor: theme.bg.secondary,
                   borderRadius: '0.5rem',
-                  border: '1px solid #e5e7eb'
+                  border: `1px solid ${theme.border.light}`
                 }}>
                   <div style={{
                     display: 'flex',
@@ -295,15 +301,15 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     gap: '0.5rem',
                     marginBottom: '0.25rem'
                   }}>
-                    <UserIcon size={16} style={{ color: '#6b7280' }} />
-                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>
+                    <UserIcon size={16} style={{ color: theme.text.secondary }} />
+                    <span style={{ fontSize: '0.75rem', color: theme.text.secondary, fontWeight: 600 }}>
                       Usuario
                     </span>
                   </div>
                   <p style={{
                     fontSize: '0.9rem',
                     fontWeight: 600,
-                    color: '#111827',
+                    color: theme.text.primary,
                     marginLeft: '1.5rem',
                     margin: 0
                   }}>
@@ -313,9 +319,9 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
 
                 <div style={{
                   padding: '0.75rem',
-                  backgroundColor: '#f9fafb',
+                  backgroundColor: theme.bg.secondary,
                   borderRadius: '0.5rem',
-                  border: '1px solid #e5e7eb'
+                  border: `1px solid ${theme.border.light}`
                 }}>
                   <div style={{
                     display: 'flex',
@@ -323,15 +329,15 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     gap: '0.5rem',
                     marginBottom: '0.25rem'
                   }}>
-                    <Mail size={16} style={{ color: '#6b7280' }} />
-                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>
+                    <Mail size={16} style={{ color: theme.text.secondary }} />
+                    <span style={{ fontSize: '0.75rem', color: theme.text.secondary, fontWeight: 600 }}>
                       Email
                     </span>
                   </div>
                   <p style={{
                     fontSize: '0.9rem',
                     fontWeight: 600,
-                    color: '#111827',
+                    color: theme.text.primary,
                     marginLeft: '1.5rem',
                     margin: 0
                   }}>
@@ -341,9 +347,9 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
 
                 <div style={{
                   padding: '0.75rem',
-                  backgroundColor: '#f9fafb',
+                  backgroundColor: theme.bg.secondary,
                   borderRadius: '0.5rem',
-                  border: '1px solid #e5e7eb'
+                  border: `1px solid ${theme.border.light}`
                 }}>
                   <div style={{
                     display: 'flex',
@@ -351,15 +357,15 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     gap: '0.5rem',
                     marginBottom: '0.25rem'
                   }}>
-                    <Lock size={16} style={{ color: '#6b7280' }} />
-                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>
+                    <Lock size={16} style={{ color: theme.text.secondary }} />
+                    <span style={{ fontSize: '0.75rem', color: theme.text.secondary, fontWeight: 600 }}>
                       Contraseña
                     </span>
                   </div>
                   <p style={{
                     fontSize: '0.9rem',
                     fontWeight: 600,
-                    color: '#111827',
+                    color: theme.text.primary,
                     marginLeft: '1.5rem',
                     margin: 0
                   }}>
@@ -375,8 +381,8 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                   style={{
                     width: '100%',
                     padding: '0.7rem',
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
+                    backgroundColor: theme.brand.primary,
+                    color: theme.text.white,
                     border: 'none',
                     borderRadius: '0.5rem',
                     fontWeight: 600,
@@ -388,8 +394,6 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     gap: '0.5rem',
                     transition: 'background-color 0.2s'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
                 >
                   <Edit2 size={16} />
                   Editar Perfil
@@ -406,9 +410,9 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     marginBottom: '0.4rem',
                     fontWeight: 600,
                     fontSize: '0.8rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>
-                    Nombre de Usuario <span style={{ color: '#ef4444' }}>*</span>
+                    Nombre de Usuario <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -420,9 +424,11 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     style={{
                       width: '100%',
                       padding: '0.65rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: '0.95rem'
+                      fontSize: '0.95rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                     placeholder="Usuario para iniciar sesión"
                   />
@@ -434,9 +440,9 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     marginBottom: '0.4rem',
                     fontWeight: 600,
                     fontSize: '0.8rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>
-                    Nombre Completo <span style={{ color: '#ef4444' }}>*</span>
+                    Nombre Completo <span style={{ color: theme.brand.danger }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -448,9 +454,11 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     style={{
                       width: '100%',
                       padding: '0.65rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: '0.95rem'
+                      fontSize: '0.95rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                   />
                 </div>
@@ -472,7 +480,7 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     marginBottom: '0.4rem',
                     fontWeight: 600,
                     fontSize: '0.8rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>
                     Nueva Contraseña
                   </label>
@@ -486,9 +494,11 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     style={{
                       width: '100%',
                       padding: '0.65rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: '0.95rem'
+                      fontSize: '0.95rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                   />
                 </div>
@@ -499,7 +509,7 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     marginBottom: '0.4rem',
                     fontWeight: 600,
                     fontSize: '0.8rem',
-                    color: '#374151'
+                    color: theme.text.primary
                   }}>
                     Confirmar Nueva Contraseña
                   </label>
@@ -513,9 +523,11 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     style={{
                       width: '100%',
                       padding: '0.65rem',
-                      border: '1px solid #d1d5db',
+                      border: `1px solid ${theme.input.border}`,
                       borderRadius: '0.375rem',
-                      fontSize: '0.95rem'
+                      fontSize: '0.95rem',
+                      backgroundColor: theme.input.bg,
+                      color: theme.text.primary
                     }}
                   />
                 </div>
@@ -529,8 +541,8 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                   style={{
                     flex: 1,
                     padding: '0.7rem',
-                    backgroundColor: saving ? '#9ca3af' : '#10b981',
-                    color: 'white',
+                    backgroundColor: saving ? theme.text.secondary : theme.brand.success,
+                    color: theme.text.white,
                     border: 'none',
                     borderRadius: '0.5rem',
                     fontWeight: 600,
@@ -541,12 +553,6 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     justifyContent: 'center',
                     gap: '0.5rem',
                     transition: 'background-color 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!saving) e.currentTarget.style.backgroundColor = '#059669';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!saving) e.currentTarget.style.backgroundColor = '#10b981';
                   }}
                 >
                   <Save size={16} />
@@ -567,8 +573,8 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                   style={{
                     flex: 1,
                     padding: '0.7rem',
-                    backgroundColor: '#f3f4f6',
-                    color: '#374151',
+                    backgroundColor: theme.bg.tertiary,
+                    color: theme.text.primary,
                     border: 'none',
                     borderRadius: '0.5rem',
                     fontWeight: 600,
@@ -577,10 +583,10 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
                     transition: 'background-color 0.2s'
                   }}
                   onMouseEnter={(e) => {
-                    if (!saving) e.currentTarget.style.backgroundColor = '#e5e7eb';
+                    if (!saving) e.currentTarget.style.backgroundColor = theme.bg.hover;
                   }}
                   onMouseLeave={(e) => {
-                    if (!saving) e.currentTarget.style.backgroundColor = '#f3f4f6';
+                    if (!saving) e.currentTarget.style.backgroundColor = theme.bg.tertiary;
                   }}
                 >
                   Cancelar
