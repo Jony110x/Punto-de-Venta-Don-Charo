@@ -51,7 +51,7 @@ def listar_productos(
     # Aplicar filtro de estado de stock
     if estado_stock and estado_stock != 'todos':
         if estado_stock == 'critico':
-            query = query.filter(models.Producto.stock < 10)
+            query = query.filter(models.Producto.stock < 5)
         elif estado_stock == 'bajo':
             query = query.filter(
                 models.Producto.stock >= 10,
@@ -156,7 +156,7 @@ def obtener_ids_filtrados(
     # Aplicar filtro de estado de stock
     if estado_stock and estado_stock != 'todos':
         if estado_stock == 'critico':
-            query = query.filter(models.Producto.stock < 10)
+            query = query.filter(models.Producto.stock < 5)
         elif estado_stock == 'bajo':
             query = query.filter(
                 models.Producto.stock >= 10,
@@ -368,7 +368,7 @@ def productos_stock_critico(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     query = db.query(models.Producto).filter(
-        models.Producto.stock < 10,
+        models.Producto.stock < 5,
         models.Producto.activo == True
     ).order_by(models.Producto.stock.asc())
     total = query.count()

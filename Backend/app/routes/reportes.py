@@ -303,9 +303,9 @@ def dashboard_hoy(
         models.Producto.activo == True
     ).scalar()
     
-    # Stock crítico (menos de 10)
+    # Stock crítico (menos de 5)
     stock_critico = db.query(func.count(models.Producto.id)).filter(
-        models.Producto.stock < 10,
+        models.Producto.stock < 5,
         models.Producto.activo == True
     ).scalar()
     

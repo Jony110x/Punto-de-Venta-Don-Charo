@@ -11,7 +11,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     nombre: producto?.nombre || '',
     descripcion: producto?.descripcion || '',
     precio_costo: producto?.precio_costo || '',
-    margen_porcentaje: producto?.margen_porcentaje || 25, // ✅ NUEVO
+    margen_porcentaje: producto?.margen_porcentaje || 25, 
     stock: producto?.stock || '',
     stock_minimo: producto?.stock_minimo || 10,
     categoria: producto?.categoria || '',

@@ -35,7 +35,7 @@ const Dashboard = () => {
   const LIMIT_CRITICO = 20;
   
   // Estados de colapso - Crítico expandido por defecto
-  const [criticoColapsado, setCriticoColapsado] = useState(false);
+  const [criticoColapsado, setCriticoColapsado] = useState(true);
   const [bajoColapsado, setBajoColapsado] = useState(true);
   
   // Refs para Intersection Observer
@@ -561,7 +561,7 @@ const Dashboard = () => {
                       textOverflow: 'ellipsis',
                       whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap'
                     }}>
-                      Stock CRÍTICO {window.innerWidth >= 640 && '(menos de 10 unidades)'}
+                      Stock CRÍTICO {window.innerWidth >= 640 && '(menos de 5 unidades)'}
                     </h3>
                     <span style={{
                       backgroundColor: '#dc2626',
