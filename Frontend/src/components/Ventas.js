@@ -4,14 +4,15 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Search, ShoppingCart, Trash2, Scan, DollarSign, Banknote, X } from 'lucide-react';
 import { getProductos, createVenta, buscarPorCodigo, getCotizaciones } from '../api/api';
 import { useToast } from '../Toast';
+import { useTheme } from '../context/ThemeContext';
 import { useOffline } from '../context/OfflineContext';
 import { 
   saveVentaPendiente, 
   updateProductoStock 
 } from '../utils/indexedDB';
 
-// Componente de tarjeta de producto memoizado para optimizar renders
-const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotizaciones, isMobile }) => {
+// Componente de tarjeta de producto memoizado - CON DARK MODE
+const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotizaciones, isMobile, theme }) => {
   const convertirPrecio = (precioARS) => {
     if (monedaSeleccionada === 'USD') return precioARS * cotizaciones.USD;
     if (monedaSeleccionada === 'BRL') return precioARS * cotizaciones.BRL;
@@ -30,31 +31,32 @@ const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotiz
   return (
     <div
       style={{
-        backgroundColor: 'white',
-        border: '2px solid #e5e7eb',
+        backgroundColor: theme.bg.card,
+        border: `2px solid ${theme.border.light}`,
         padding: isMobile ? '0.625rem' : '0.5rem',
         borderRadius: '0.375rem',
         transition: 'border-color 0.2s',
         cursor: 'pointer',
         height: 'fit-content'
       }}
-      onMouseEnter={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-      onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+      onMouseEnter={(e) => e.currentTarget.style.borderColor = theme.brand.primary}
+      onMouseLeave={(e) => e.currentTarget.style.borderColor = theme.border.light}
     >
       <div style={{ marginBottom: '0.375rem' }}>
         <h3 style={{ 
           fontWeight: 'bold', 
           marginBottom: '0.125rem', 
           fontSize: isMobile ? '0.875rem' : '0.8125rem',
-          lineHeight: '1.2'
+          lineHeight: '1.2',
+          color: theme.text.primary
         }}>
           {producto.nombre}
         </h3>
-        <p style={{ fontSize: isMobile ? '0.75rem' : '0.6875rem', color: '#6b7280', lineHeight: '1.2' }}>
+        <p style={{ fontSize: isMobile ? '0.75rem' : '0.6875rem', color: theme.text.secondary, lineHeight: '1.2' }}>
           {producto.categoria || 'Sin categoría'}
         </p>
         {producto.codigo_barras && (
-          <p style={{ fontSize: '0.625rem', color: '#9ca3af', marginTop: '0.125rem' }}>
+          <p style={{ fontSize: '0.625rem', color: theme.text.tertiary, marginTop: '0.125rem' }}>
             CB: {producto.codigo_barras}
           </p>
         )}
@@ -92,7 +94,7 @@ const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotiz
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.25rem' }}>
-        <span style={{ fontSize: isMobile ? '0.75rem' : '0.6875rem', color: '#6b7280' }}>
+        <span style={{ fontSize: isMobile ? '0.75rem' : '0.6875rem', color: theme.text.secondary }}>
           Stock: {producto.stock}
         </span>
         <button
@@ -104,7 +106,13 @@ const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotiz
             gap: '0.25rem', 
             padding: isMobile ? '0.375rem 0.625rem' : '0.25rem 0.5rem', 
             fontSize: isMobile ? '0.8125rem' : '0.75rem',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
+            backgroundColor: theme.brand.primary,
+            color: theme.text.white,
+            border: 'none',
+            borderRadius: '0.375rem',
+            cursor: 'pointer',
+            fontWeight: 600
           }}
         >
           <Plus size={isMobile ? 14 : 12} />
@@ -124,11 +132,11 @@ const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotiz
   );
 });
 
-// Skeleton para productos en estado de carga
-const ProductCardSkeleton = ({ isMobile }) => (
+// Skeleton para productos - CON DARK MODE
+const ProductCardSkeleton = ({ isMobile, theme }) => (
   <div style={{
-    backgroundColor: '#f3f4f6',
-    border: '2px solid #e5e7eb',
+    backgroundColor: theme.bg.tertiary,
+    border: `2px solid ${theme.border.light}`,
     padding: isMobile ? '0.625rem' : '0.5rem',
     borderRadius: '0.375rem',
     height: 'fit-content'
@@ -136,14 +144,14 @@ const ProductCardSkeleton = ({ isMobile }) => (
     <div style={{ marginBottom: '0.375rem' }}>
       <div style={{ 
         height: '1rem', 
-        backgroundColor: '#e5e7eb', 
+        backgroundColor: theme.border.medium, 
         borderRadius: '0.25rem',
         marginBottom: '0.375rem',
         animation: 'pulse 1.5s ease-in-out infinite'
       }} />
       <div style={{ 
         height: '0.75rem', 
-        backgroundColor: '#e5e7eb', 
+        backgroundColor: theme.border.medium, 
         borderRadius: '0.25rem',
         width: '60%',
         animation: 'pulse 1.5s ease-in-out infinite'
@@ -151,14 +159,14 @@ const ProductCardSkeleton = ({ isMobile }) => (
     </div>
     <div style={{ 
       height: '3rem', 
-      backgroundColor: '#e5e7eb', 
+      backgroundColor: theme.border.medium, 
       borderRadius: '0.25rem',
       marginBottom: '0.375rem',
       animation: 'pulse 1.5s ease-in-out infinite'
     }} />
     <div style={{ 
       height: '1.5rem', 
-      backgroundColor: '#e5e7eb', 
+      backgroundColor: theme.border.medium, 
       borderRadius: '0.25rem',
       animation: 'pulse 1.5s ease-in-out infinite'
     }} />
@@ -166,6 +174,8 @@ const ProductCardSkeleton = ({ isMobile }) => (
 );
 
 const Ventas = () => {
+  const { theme } = useTheme();
+  
   // Estados principales
   const [productos, setProductos] = useState([]);
   const [carrito, setCarrito] = useState([]);
@@ -574,7 +584,7 @@ const Ventas = () => {
   const totalCarrito = carrito.reduce((sum, item) => sum + (getPrecioFinal(item.precio_unitario) * item.cantidad), 0);
   const mostrarProductos = busquedaDebounced.length > 0;
 
-  // Componente de carrito (reutilizable para desktop y modal mobile)
+  // Componente de carrito (reutilizable para desktop y modal mobile) - CON DARK MODE
   const CarritoContent = () => (
     <>
       {carrito.length === 0 ? (
@@ -584,7 +594,7 @@ const Ventas = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#9ca3af',
+          color: theme.text.tertiary,
           padding: isMobile ? '2rem 1rem' : '0'
         }}>
           <ShoppingCart size={isMobile ? 40 : 48} />
@@ -601,13 +611,13 @@ const Ventas = () => {
           <div style={{ 
             marginBottom: '0.75rem', 
             paddingBottom: '0.75rem', 
-            borderBottom: '2px solid #e5e7eb'
+            borderBottom: `2px solid ${theme.border.light}`
           }}>
             <div style={{ marginBottom: '0.75rem' }}>
               <label style={{ 
                 fontSize: isMobile ? '0.8125rem' : '0.75rem', 
                 fontWeight: 600, 
-                color: '#374151', 
+                color: theme.text.primary, 
                 display: 'block', 
                 marginBottom: '0.375rem' 
               }}>
@@ -621,8 +631,8 @@ const Ventas = () => {
                     style={{
                       flex: 1,
                       padding: isMobile ? '0.5rem' : '0.375rem',
-                      backgroundColor: monedaSeleccionada === moneda ? '#3b82f6' : '#e5e7eb',
-                      color: monedaSeleccionada === moneda ? 'white' : '#374151',
+                      backgroundColor: monedaSeleccionada === moneda ? theme.brand.primary : theme.bg.tertiary,
+                      color: monedaSeleccionada === moneda ? theme.text.white : theme.text.primary,
                       border: 'none',
                       borderRadius: '0.375rem',
                       fontWeight: 600,
@@ -640,7 +650,7 @@ const Ventas = () => {
               <label style={{ 
                 fontSize: isMobile ? '0.8125rem' : '0.75rem', 
                 fontWeight: 600, 
-                color: '#374151', 
+                color: theme.text.primary, 
                 display: 'block', 
                 marginBottom: '0.375rem' 
               }}>
@@ -652,8 +662,8 @@ const Ventas = () => {
                   style={{
                     flex: 1,
                     padding: isMobile ? '0.625rem' : '0.5rem',
-                    backgroundColor: metodoPago === 'normal' ? '#3b82f6' : '#e5e7eb',
-                    color: metodoPago === 'normal' ? 'white' : '#374151',
+                    backgroundColor: metodoPago === 'normal' ? theme.brand.primary : theme.bg.tertiary,
+                    color: metodoPago === 'normal' ? theme.text.white : theme.text.primary,
                     border: 'none',
                     borderRadius: '0.375rem',
                     fontWeight: 600,
@@ -673,8 +683,8 @@ const Ventas = () => {
                   style={{
                     flex: 1,
                     padding: isMobile ? '0.625rem' : '0.5rem',
-                    backgroundColor: metodoPago === 'efectivo' ? '#10b981' : '#e5e7eb',
-                    color: metodoPago === 'efectivo' ? 'white' : '#374151',
+                    backgroundColor: metodoPago === 'efectivo' ? '#10b981' : theme.bg.tertiary,
+                    color: metodoPago === 'efectivo' ? theme.text.white : theme.text.primary,
                     border: 'none',
                     borderRadius: '0.375rem',
                     fontWeight: 600,
@@ -708,7 +718,7 @@ const Ventas = () => {
                 <div
                   key={item.producto_id}
                   style={{
-                    borderBottom: '1px solid #e5e7eb',
+                    borderBottom: `1px solid ${theme.border.light}`,
                     paddingBottom: '0.5rem',
                     marginBottom: '0.5rem'
                   }}
@@ -724,11 +734,12 @@ const Ventas = () => {
                         fontWeight: 600, 
                         fontSize: isMobile ? '0.9375rem' : '0.875rem',
                         lineHeight: '1.3',
-                        marginBottom: '0.125rem'
+                        marginBottom: '0.125rem',
+                        color: theme.text.primary
                       }}>
                         {item.nombre}
                       </h4>
-                      <div style={{ fontSize: isMobile ? '0.8125rem' : '0.75rem', color: '#6b7280' }}>
+                      <div style={{ fontSize: isMobile ? '0.8125rem' : '0.75rem', color: theme.text.secondary }}>
                         {getSimbolo()}{precioFinal.toFixed(2)} c/u
                       </div>
                     </div>
@@ -739,7 +750,7 @@ const Ventas = () => {
                         backgroundColor: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#ef4444',
+                        color: theme.brand.danger,
                         flexShrink: 0
                       }}
                     >
@@ -751,12 +762,13 @@ const Ventas = () => {
                       onClick={() => modificarCantidad(item.producto_id, item.cantidad - 1)}
                       style={{
                         padding: isMobile ? '0.375rem 0.75rem' : '0.25rem 0.625rem',
-                        backgroundColor: '#e5e7eb',
+                        backgroundColor: theme.bg.tertiary,
                         border: 'none',
                         borderRadius: '0.375rem',
                         cursor: 'pointer',
                         fontWeight: 'bold',
-                        fontSize: isMobile ? '1rem' : '0.875rem'
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        color: theme.text.primary
                       }}
                     >
                       -
@@ -765,7 +777,8 @@ const Ventas = () => {
                       fontWeight: 'bold', 
                       minWidth: isMobile ? '2rem' : '1.5rem', 
                       textAlign: 'center', 
-                      fontSize: isMobile ? '1rem' : '0.875rem' 
+                      fontSize: isMobile ? '1rem' : '0.875rem',
+                      color: theme.text.primary
                     }}>
                       {item.cantidad}
                     </span>
@@ -773,12 +786,13 @@ const Ventas = () => {
                       onClick={() => modificarCantidad(item.producto_id, item.cantidad + 1)}
                       style={{
                         padding: isMobile ? '0.375rem 0.75rem' : '0.25rem 0.625rem',
-                        backgroundColor: '#e5e7eb',
+                        backgroundColor: theme.bg.tertiary,
                         border: 'none',
                         borderRadius: '0.375rem',
                         cursor: 'pointer',
                         fontWeight: 'bold',
-                        fontSize: isMobile ? '1rem' : '0.875rem'
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        color: theme.text.primary
                       }}
                     >
                       +
@@ -786,7 +800,8 @@ const Ventas = () => {
                     <span style={{ 
                       marginLeft: 'auto', 
                       fontWeight: 'bold', 
-                      fontSize: isMobile ? '1rem' : '0.875rem' 
+                      fontSize: isMobile ? '1rem' : '0.875rem',
+                      color: theme.text.primary
                     }}>
                       {getSimbolo()}{(precioFinal * item.cantidad).toFixed(2)}
                     </span>
@@ -841,8 +856,12 @@ const Ventas = () => {
                 width: '100%', 
                 padding: isMobile ? '0.75rem' : '0.625rem', 
                 fontSize: isMobile ? '1.125rem' : '1rem',
-                backgroundColor: metodoPago === 'efectivo' ? '#10b981' : '#3b82f6',
-                color: 'white'
+                backgroundColor: metodoPago === 'efectivo' ? '#10b981' : theme.brand.primary,
+                color: theme.text.white,
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                fontWeight: 600
               }}
             >
               {!isOnline ? 'Guardar Venta (Offline)' : 'Finalizar Venta'}
@@ -881,6 +900,11 @@ const Ventas = () => {
               transform: translateY(0);
             }
           }
+          @media (max-width: 640px) {
+           .hide-on-mobile {
+            display: none !important;
+            }
+          }
         `}
       </style>
 
@@ -907,9 +931,10 @@ const Ventas = () => {
             <h2 style={{ 
               fontSize: isMobile ? '1.25rem' : '1.5rem', 
               fontWeight: 'bold',
-              margin: 0
+              margin: 0,
+              color: theme.text.primary
             }}>
-              Nueva Venta {!isOnline && <span style={{ color: '#ef4444', fontSize: '0.875rem' }}>OFFLINE</span>}
+              Nueva Venta {!isOnline && <span style={{ color: theme.brand.danger, fontSize: '0.875rem' }}>OFFLINE</span>}
             </h2>
             
             {/* Botón flotante del carrito en mobile */}
@@ -919,8 +944,8 @@ const Ventas = () => {
                 style={{
                   position: 'relative',
                   padding: '0.625rem',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
+                  backgroundColor: theme.brand.primary,
+                  color: theme.text.white,
                   border: 'none',
                   borderRadius: '0.5rem',
                   cursor: 'pointer',
@@ -937,8 +962,8 @@ const Ventas = () => {
                   position: 'absolute',
                   top: '-0.375rem',
                   right: '-0.375rem',
-                  backgroundColor: '#ef4444',
-                  color: 'white',
+                  backgroundColor: theme.brand.danger,
+                  color: theme.text.white,
                   borderRadius: '9999px',
                   width: '1.25rem',
                   height: '1.25rem',
@@ -991,8 +1016,11 @@ const Ventas = () => {
                 style={{ 
                   flex: 1,
                   fontSize: isMobile ? '16px' : '1rem',
-                  backgroundColor: 'white',
-                  padding: '0.5rem'
+                  backgroundColor: theme.input.bg,
+                  border: `1px solid ${theme.input.border}`,
+                  color: theme.text.primary,
+                  padding: '0.5rem',
+                  borderRadius: '0.375rem'
                 }}
               />
               <button
@@ -1002,7 +1030,14 @@ const Ventas = () => {
                 style={{ 
                   minWidth: isMobile ? '70px' : '80px', 
                   padding: '0.5rem',
-                  fontSize: isMobile ? '0.8125rem' : '0.875rem'
+                  fontSize: isMobile ? '0.8125rem' : '0.875rem',
+                  backgroundColor: theme.brand.primary,
+                  color: theme.text.white,
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: (buscandoCodigo || !codigoBarras.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (buscandoCodigo || !codigoBarras.trim()) ? 0.6 : 1,
+                  fontWeight: 600
                 }}
               >
                 {buscandoCodigo ? 'Buscando...' : 'Buscar'}
@@ -1012,15 +1047,15 @@ const Ventas = () => {
 
           {/* Búsqueda manual */}
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             padding: isMobile ? '0.625rem' : '0.75rem',
             borderRadius: '0.5rem',
-            border: '2px solid #e5e7eb',
+            border: `2px solid ${theme.border.light}`,
             marginBottom: isMobile ? '0.5rem' : '0.75rem',
             flexShrink: 0
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Search size={18} style={{ color: '#6b7280' }} />
+              <Search size={18} style={{ color: theme.text.secondary }} />
               <input
                 type="text"
                 placeholder="Buscar producto..."
@@ -1032,7 +1067,9 @@ const Ventas = () => {
                   outline: 'none', 
                   padding: '0.25rem', 
                   flex: 1,
-                  fontSize: isMobile ? '16px' : '0.875rem'
+                  fontSize: isMobile ? '16px' : '0.875rem',
+                  backgroundColor: 'transparent',
+                  color: theme.text.primary
                 }}
               />
             </div>
@@ -1041,14 +1078,14 @@ const Ventas = () => {
           {/* Cotizaciones en mobile */}
           {isMobile && cotizaciones.dolarPromedio && (
             <div style={{
-              backgroundColor: '#f3f4f6',
+              backgroundColor: theme.bg.tertiary,
               padding: '0.5rem',
               borderRadius: '0.375rem',
               marginBottom: '0.5rem',
               display: 'flex',
               justifyContent: 'space-around',
               fontSize: '0.75rem',
-              color: '#374151',
+              color: theme.text.primary,
               fontWeight: 600,
               flexShrink: 0
             }}>
@@ -1067,10 +1104,10 @@ const Ventas = () => {
           }}>
             {!mostrarProductos ? (
               <div style={{
-                backgroundColor: 'white',
+                backgroundColor: theme.bg.card,
                 padding: isMobile ? '1.5rem 1rem' : '2rem',
                 borderRadius: '0.5rem',
-                border: '2px solid #e5e7eb',
+                border: `2px solid ${theme.border.light}`,
                 textAlign: 'center',
                 flex: 1,
                 display: 'flex',
@@ -1078,32 +1115,32 @@ const Ventas = () => {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <Search size={isMobile ? 40 : 48} style={{ color: '#d1d5db', marginBottom: '0.75rem' }} />
+                <Search size={isMobile ? 40 : 48} style={{ color: theme.border.medium, marginBottom: '0.75rem' }} />
                 <h3 style={{ 
                   fontSize: isMobile ? '1rem' : '1.125rem', 
                   fontWeight: 600, 
-                  color: '#6b7280', 
+                  color: theme.text.secondary, 
                   marginBottom: '0.5rem' 
                 }}>
                   Busque un producto para comenzar
                 </h3>
-                <p style={{ color: '#9ca3af', fontSize: isMobile ? '0.8125rem' : '0.875rem' }}>
+                <p style={{ color: theme.text.tertiary, fontSize: isMobile ? '0.8125rem' : '0.875rem' }}>
                   Escanee un código o busque por nombre
                 </p>
               </div>
             ) : productos.length === 0 && !loading ? (
               <div style={{
-                backgroundColor: 'white',
+                backgroundColor: theme.bg.card,
                 padding: isMobile ? '1.5rem 1rem' : '2rem',
                 borderRadius: '0.5rem',
-                border: '2px solid #e5e7eb',
+                border: `2px solid ${theme.border.light}`,
                 textAlign: 'center',
                 flex: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <p style={{ color: '#6b7280', fontSize: isMobile ? '0.875rem' : '1rem' }}>
+                <p style={{ color: theme.text.secondary, fontSize: isMobile ? '0.875rem' : '1rem' }}>
                   No se encontraron productos
                 </p>
               </div>
@@ -1124,7 +1161,7 @@ const Ventas = () => {
                 {loading && productos.length === 0 ? (
                   <>
                     {[...Array(isMobile ? 6 : 10)].map((_, index) => (
-                      <ProductCardSkeleton key={`skeleton-${index}`} isMobile={isMobile} />
+                      <ProductCardSkeleton key={`skeleton-${index}`} isMobile={isMobile} theme={theme} />
                     ))}
                   </>
                 ) : (
@@ -1139,6 +1176,7 @@ const Ventas = () => {
                             monedaSeleccionada={monedaSeleccionada}
                             cotizaciones={cotizaciones}
                             isMobile={isMobile}
+                            theme={theme}
                           />
                         </div>
                       );
@@ -1149,7 +1187,7 @@ const Ventas = () => {
                         gridColumn: '1 / -1',
                         padding: isMobile ? '0.75rem' : '1rem', 
                         textAlign: 'center',
-                        color: '#6b7280',
+                        color: theme.text.secondary,
                         fontSize: isMobile ? '0.8125rem' : '0.875rem'
                       }}>
                         <p>Cargando más productos...</p>
@@ -1161,7 +1199,7 @@ const Ventas = () => {
                         gridColumn: '1 / -1',
                         padding: isMobile ? '0.75rem' : '1rem', 
                         textAlign: 'center',
-                        color: '#6b7280',
+                        color: theme.text.secondary,
                         fontSize: isMobile ? '0.75rem' : '0.875rem'
                       }}>
                         <p>Todos los productos cargados ({total} total)</p>
@@ -1183,11 +1221,11 @@ const Ventas = () => {
               alignItems: 'center', 
               marginBottom: '0.75rem' 
             }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: theme.text.primary }}>
                 Carrito
               </h2>
               {cotizaciones.dolarPromedio && (
-                <div style={{ fontSize: '0.75rem', color: '#000000ff', textAlign: 'right' }}>
+                <div style={{ fontSize: '0.75rem', color: theme.text.primary, textAlign: 'right' }}>
                   <div>USD: ${cotizaciones.dolarPromedio.toFixed(2)}</div>
                   <div>BRL: ${cotizaciones.realPromedio.toFixed(2)}</div>
                 </div>
@@ -1195,8 +1233,8 @@ const Ventas = () => {
             </div>
 
             <div style={{
-              backgroundColor: 'white',
-              border: '2px solid #e5e7eb',
+              backgroundColor: theme.bg.card,
+              border: `2px solid ${theme.border.light}`,
               borderRadius: '0.5rem',
               padding: '0.75rem',
               display: 'flex',
@@ -1218,20 +1256,20 @@ const Ventas = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
           display: 'flex',
           alignItems: 'flex-end',
           zIndex: 1000,
           animation: 'fadeIn 0.2s ease-out'
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             borderRadius: '1rem 1rem 0 0',
             width: '100%',
             maxHeight: '85vh',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1)',
+            boxShadow: theme.shadow.xl,
             animation: 'slideUp 0.3s ease-out'
           }}>
             <style>
@@ -1253,10 +1291,10 @@ const Ventas = () => {
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '1rem',
-              borderBottom: '2px solid #e5e7eb',
+              borderBottom: `2px solid ${theme.border.light}`,
               flexShrink: 0
             }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0, color: theme.text.primary }}>
                 Carrito ({carrito.length})
               </h2>
               <button
@@ -1270,9 +1308,10 @@ const Ventas = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '0.375rem',
-                  transition: 'background-color 0.2s'
+                  transition: 'background-color 0.2s',
+                  color: theme.text.secondary
                 }}
-                onTouchStart={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                onTouchStart={(e) => e.currentTarget.style.backgroundColor = theme.bg.hover}
                 onTouchEnd={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <X size={24} />

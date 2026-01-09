@@ -319,11 +319,11 @@ function AppContent() {
             {/* Botones - Responsive */}
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0, flexWrap: "wrap" }}>
               {/* Botones Claro y AFIP - Ocultos en móvil pequeño */}
-              <div style={{ 
+              {/* Botones Claro y AFIP - Ocultos en móvil pequeño */}
+              <div className="hide-on-mobile" style={{ 
                 display: "flex", 
-                gap: "0.5rem",
-                '@media (max-width: 640px)': { display: 'none' }
-              }}>
+                gap: "0.5rem"
+              }}>      
                 <a
                   href="https://clarocomercios.claro.com.ar/main/recargas"
                   target="_blank"

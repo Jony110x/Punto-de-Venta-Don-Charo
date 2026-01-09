@@ -348,7 +348,7 @@ def productos_stock_bajo(
         models.Producto.stock < models.Producto.stock_minimo,
         models.Producto.stock >= 10,  # Bajo pero no crítico
         models.Producto.activo == True
-    ).order_by(models.Producto.stock.asc())
+    ).order_by(models.Producto.stock.asc(),models.Producto.id.asc())
     total = query.count()
     productos = query.offset(skip).limit(limit).all()
     resultado = {
@@ -370,7 +370,8 @@ def productos_stock_critico(
     query = db.query(models.Producto).filter(
         models.Producto.stock < 5,
         models.Producto.activo == True
-    ).order_by(models.Producto.stock.asc())
+    ).order_by(models.Producto.stock.asc(), models.Producto.id.asc())
+
     total = query.count()
     productos = query.offset(skip).limit(limit).all()
    

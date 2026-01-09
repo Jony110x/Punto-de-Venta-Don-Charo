@@ -21,25 +21,31 @@ const Login = ({ onLoginSuccess }) => {
 
   // Procesa el login y guarda credenciales
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  e.preventDefault();
+  setLoading(true);
+  setError('');
 
-    try {
-      const response = await login(formData);
-      const { access_token, user } = response.data;
-      
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      onLoginSuccess(user);
-    } catch (error) {
-      console.error('Error en login:', error);
-      setError(error.response?.data?.detail || 'Error al iniciar sesión');
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const response = await login(formData);
+    const { access_token, user } = response.data;
+    
+    console.log('Usuario logueado:', user); // Debug
+    console.log('Dark mode:', user.dark_mode); // Debug
+    
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user', JSON.stringify(user));
+    
+    // Disparar evento para que ThemeContext se actualice
+    window.dispatchEvent(new Event('storage'));
+    
+    onLoginSuccess(user);
+  } catch (error) {
+    console.error('Error en login:', error);
+    setError(error.response?.data?.detail || 'Error al iniciar sesión');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{

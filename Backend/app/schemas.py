@@ -21,6 +21,7 @@ class Usuario(UsuarioBase):
     activo: bool
     fecha_creacion: datetime
     ultimo_acceso: Optional[datetime]
+    dark_mode: bool = False
     
     class Config:
         from_attributes = True
@@ -31,6 +32,7 @@ class UsuarioResponse(BaseModel):
     email: str
     nombre_completo: Optional[str]
     rol: str
+    dark_mode: bool = False
     
     class Config:
         from_attributes = True
@@ -177,6 +179,7 @@ class UserUpdate(BaseModel):
     nombre_completo: Optional[str] = None
     rol: Optional[str] = None
     activo: Optional[bool] = None
+    dark_mode: Optional[bool] = None
 
 class UserListResponse(BaseModel):
     id: int
@@ -187,6 +190,7 @@ class UserListResponse(BaseModel):
     activo: bool
     fecha_creacion: datetime
     ultimo_acceso: Optional[datetime]
+    dark_mode: bool = False
     
     class Config:
         from_attributes = True
@@ -209,3 +213,6 @@ class ActualizacionPreciosMasivaResponse(BaseModel):
     success: bool
     productos_actualizados: int
     message: str
+
+class DarkModeUpdate(BaseModel):
+    dark_mode: bool

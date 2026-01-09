@@ -274,4 +274,8 @@ export const getCotizaciones = async () => {
   }
 };
 
+export const updateUserTheme = (userId, darkMode) => {
+  return api.patch(`/users/${userId}/theme`, { dark_mode: darkMode });
+};
+
 export default api;

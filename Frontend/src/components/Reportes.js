@@ -553,65 +553,78 @@ const Reportes = () => {
           </div>
 
           {/* Métodos de Pago */}
-          <div style={{ 
-            backgroundColor: theme.bg.card, 
-            padding: isMobile ? '0.75rem' : '0.75rem', 
-            borderRadius: '0.5rem', 
-            border: `2px solid ${theme.border.light}` 
-          }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.9375rem' : '1rem', 
-              fontWeight: 'bold', 
-              marginBottom: '0.5rem',
-              color: theme.text.primary,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              {isMobile && <DollarSign size={16} />}
-              Métodos de Pago
-            </h3>
-            {loading ? (
-              <ChartSkeleton height={getChartHeight()} theme={theme} />
-            ) : (
-              <ResponsiveContainer width="100%" height={getChartHeight()}>
-                <PieChart>
-                  <Pie
-                    data={datosMetodosPago}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry) => {
-                      const total = datosMetodosPago.reduce((sum, item) => sum + item.cantidad, 0);
-                      const porcentaje = ((entry.cantidad / total) * 100).toFixed(1);
-                      return isMobile ? `${porcentaje}%` : `${entry.metodo}: ${porcentaje}%`;
-                    }}
-                    outerRadius={isMobile ? 50 : 60}
-                    fill="#8884d8"
-                    dataKey="cantidad"
-                    style={{ fontSize: isMobile ? '0.625rem' : '0.75rem', fill: theme.text.primary }}
-                  >
-                    {datosMetodosPago.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value, name, props) => {
-                      const total = datosMetodosPago.reduce((sum, item) => sum + item.cantidad, 0);
-                      const porcentaje = ((value / total) * 100).toFixed(1);
-                      return [`${value} (${porcentaje}%)`, 'Ventas'];
-                    }}
-                    contentStyle={{
-                      backgroundColor: theme.chart.tooltip.bg,
-                      border: `1px solid ${theme.chart.tooltip.border}`,
-                      borderRadius: '0.375rem',
-                      color: theme.chart.tooltip.text
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+<div style={{ 
+  backgroundColor: theme.bg.card, 
+  padding: isMobile ? '0.75rem' : '0.75rem', 
+  borderRadius: '0.5rem', 
+  border: `2px solid ${theme.border.light}` 
+}}>
+  <h3 style={{ 
+    fontSize: isMobile ? '0.9375rem' : '1rem', 
+    fontWeight: 'bold', 
+    marginBottom: '0.5rem',
+    color: theme.text.primary,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  }}>
+    {isMobile && <DollarSign size={16} />}
+    Métodos de Pago
+  </h3>
+  {loading ? (
+    <ChartSkeleton height={getChartHeight()} theme={theme} />
+  ) : (
+    <ResponsiveContainer width="100%" height={getChartHeight()}>
+      <PieChart>
+        <Pie
+          data={datosMetodosPago}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          label={(entry) => {
+            const total = datosMetodosPago.reduce((sum, item) => sum + item.cantidad, 0);
+            const porcentaje = ((entry.cantidad / total) * 100).toFixed(1);
+            return isMobile ? `${porcentaje}%` : `${entry.metodo}: ${porcentaje}%`;
+          }}
+          outerRadius={isMobile ? 45 : 55}
+          dataKey="cantidad"
+        >
+          {datosMetodosPago.map((entry, index) => {
+            let fillColor;
+            if (entry.metodo === 'Efectivo') {
+              fillColor = '#10b981';
+            } else if (entry.metodo === 'Normal') {
+              fillColor = '#3b82f6';
+            } else {
+              fillColor = COLORS[index % COLORS.length];
+            }
+            
+            return (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={fillColor}
+                style={{ fill: fillColor }}
+              />
+            );
+          })}
+        </Pie>
+        <Tooltip 
+          formatter={(value, name, props) => {
+            const total = datosMetodosPago.reduce((sum, item) => sum + item.cantidad, 0);
+            const porcentaje = ((value / total) * 100).toFixed(1);
+            return [`${value} (${porcentaje}%)`, 'Ventas'];
+          }}
+          contentStyle={{
+            backgroundColor: theme.chart.tooltip.bg,
+            border: `1px solid ${theme.chart.tooltip.border}`,
+            borderRadius: '0.375rem',
+            color: theme.chart.tooltip.text
+          }}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  )}
+</div>
 
           {/* Ventas por Horario */}
           <div style={{ 

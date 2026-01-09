@@ -21,6 +21,7 @@ class Usuario(Base):
     activo = Column(Boolean, default=True)
     fecha_creacion = Column(DateTime, default=datetime.now)
     ultimo_acceso = Column(DateTime)
+    dark_mode = Column(Boolean, default=False)
 
 class Producto(Base):
     __tablename__ = "productos"

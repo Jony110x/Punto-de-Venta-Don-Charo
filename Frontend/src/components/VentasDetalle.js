@@ -16,8 +16,11 @@ import {
   CreditCard
 } from 'lucide-react';
 import api from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 
 const VentasDetalle = () => {
+  const { theme } = useTheme();
+  
   // Estados principales
   const [ventas, setVentas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -259,7 +262,7 @@ const VentasDetalle = () => {
     }).format(amount);
   };
 
-  // Componente de tarjeta de venta para mobile
+  // Componente de tarjeta de venta para mobile - CON DARK MODE
   const VentaCard = ({ venta, isLast }) => {
     const isExpanded = ventaExpandida === venta.id;
     
@@ -267,8 +270,8 @@ const VentasDetalle = () => {
       <div
         ref={isLast ? lastVentaRef : null}
         style={{
-          backgroundColor: 'white',
-          border: '2px solid #e5e7eb',
+          backgroundColor: theme.bg.card,
+          border: `2px solid ${theme.border.light}`,
           borderRadius: '0.5rem',
           overflow: 'hidden',
           marginBottom: '0.5rem'
@@ -280,7 +283,7 @@ const VentasDetalle = () => {
           style={{
             padding: '0.75rem',
             cursor: 'pointer',
-            backgroundColor: isExpanded ? '#f3f4f6' : 'white'
+            backgroundColor: isExpanded ? theme.bg.hover : theme.bg.card
           }}
         >
           {/* Primera fila: ID y Total */}
@@ -318,9 +321,9 @@ const VentasDetalle = () => {
               alignItems: 'center', 
               gap: '0.375rem',
               fontSize: '0.8125rem',
-              color: '#374151'
+              color: theme.text.primary
             }}>
-              <Calendar size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+              <Calendar size={14} style={{ color: theme.text.secondary, flexShrink: 0 }} />
               <span style={{ 
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -335,9 +338,9 @@ const VentasDetalle = () => {
               alignItems: 'center', 
               gap: '0.375rem',
               fontSize: '0.8125rem',
-              color: '#374151'
+              color: theme.text.primary
             }}>
-              <User size={14} style={{ color: '#6b7280', flexShrink: 0 }} />
+              <User size={14} style={{ color: theme.text.secondary, flexShrink: 0 }} />
               <span style={{ 
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -374,7 +377,7 @@ const VentasDetalle = () => {
               alignItems: 'center',
               gap: '0.5rem',
               fontSize: '0.8125rem', 
-              color: '#6b7280' 
+              color: theme.text.secondary
             }}>
               <span>
                 {venta.cantidad_items} item{venta.cantidad_items !== 1 ? 's' : ''}
@@ -388,13 +391,13 @@ const VentasDetalle = () => {
         {isExpanded && (
           <div style={{
             padding: '0.75rem',
-            borderTop: '1px solid #e5e7eb',
-            backgroundColor: '#f9fafb'
+            borderTop: `1px solid ${theme.border.light}`,
+            backgroundColor: theme.bg.secondary
           }}>
             <h4 style={{ 
               fontWeight: 600, 
               marginBottom: '0.75rem', 
-              color: '#374151',
+              color: theme.text.primary,
               fontSize: '0.875rem'
             }}>
               Productos:
@@ -406,10 +409,10 @@ const VentasDetalle = () => {
                 <div 
                   key={idx} 
                   style={{
-                    backgroundColor: 'white',
+                    backgroundColor: theme.bg.card,
                     padding: '0.625rem',
                     borderRadius: '0.375rem',
-                    border: '1px solid #e5e7eb'
+                    border: `1px solid ${theme.border.light}`
                   }}
                 >
                   <div style={{ 
@@ -420,7 +423,7 @@ const VentasDetalle = () => {
                     <span style={{ 
                       fontSize: '0.8125rem',
                       fontWeight: 600,
-                      color: '#374151',
+                      color: theme.text.primary,
                       flex: 1
                     }}>
                       {item.producto_nombre}
@@ -438,7 +441,7 @@ const VentasDetalle = () => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     fontSize: '0.75rem',
-                    color: '#6b7280'
+                    color: theme.text.secondary
                   }}>
                     <span>Cant: {item.cantidad}</span>
                     <span>P.Unit: {formatMoney(item.precio_unitario)}</span>
@@ -480,7 +483,7 @@ const VentasDetalle = () => {
             to { transform: rotate(360deg); }
           }
           
-          /* Scrollbar personalizado */
+          /* Scrollbar personalizado con tema */
           div[style*="overflow"] {
             scrollbar-width: thin;
           }
@@ -490,13 +493,17 @@ const VentasDetalle = () => {
           }
           
           div[style*="overflow"]::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: ${theme.bg.tertiary};
             border-radius: 10px;
           }
           
           div[style*="overflow"]::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
+            background: ${theme.border.medium};
             border-radius: 10px;
+          }
+
+          div[style*="overflow"]::-webkit-scrollbar-thumb:hover {
+            background: ${theme.border.dark};
           }
         `}
       </style>
@@ -514,7 +521,7 @@ const VentasDetalle = () => {
         <h1 style={{ 
           fontSize: isMobile ? '1.5rem' : '1.875rem', 
           fontWeight: 'bold', 
-          color: '#1e40af',
+          color: theme.brand.primary,
           margin: 0
         }}>
           Detalle de Ventas
@@ -533,9 +540,9 @@ const VentasDetalle = () => {
               justifyContent: 'center',
               gap: '0.5rem',
               padding: isMobile ? '0.625rem' : '0.625rem 1rem',
-              backgroundColor: mostrarFiltros ? '#1e40af' : 'white',
-              color: mostrarFiltros ? 'white' : '#1e40af',
-              border: '2px solid #1e40af',
+              backgroundColor: mostrarFiltros ? theme.brand.primary : theme.bg.card,
+              color: mostrarFiltros ? theme.text.white : theme.brand.primary,
+              border: `2px solid ${theme.brand.primary}`,
               borderRadius: '0.5rem',
               cursor: 'pointer',
               fontWeight: 600,
@@ -557,15 +564,16 @@ const VentasDetalle = () => {
               justifyContent: 'center',
               gap: '0.5rem',
               padding: isMobile ? '0.625rem' : '0.625rem 1rem',
-              backgroundColor: exportando ? '#9ca3af' : '#10b981',
-              color: 'white',
+              backgroundColor: exportando ? theme.text.secondary : theme.brand.success,
+              color: theme.text.white,
               border: 'none',
               borderRadius: '0.5rem',
               cursor: exportando || ventas.length === 0 ? 'not-allowed' : 'pointer',
               fontWeight: 600,
               transition: 'all 0.2s',
               flex: isMobile ? '1' : 'none',
-              fontSize: isMobile ? '0.875rem' : '1rem'
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              opacity: exportando || ventas.length === 0 ? 0.6 : 1
             }}
           >
             {exportando ? (
@@ -586,11 +594,11 @@ const VentasDetalle = () => {
       {/* Panel de filtros */}
       {mostrarFiltros && (
         <div style={{
-          backgroundColor: '#f3f4f6',
+          backgroundColor: theme.bg.secondary,
           padding: isMobile ? '0.75rem' : '0.5rem',
           borderRadius: '0.5rem',
           marginBottom: '0.5rem',
-          border: '2px solid #e5e7eb',
+          border: `2px solid ${theme.border.light}`,
           flexShrink: 0
         }}>
           <div style={{
@@ -603,7 +611,7 @@ const VentasDetalle = () => {
               <label style={{ 
                 fontSize: '0.875rem', 
                 fontWeight: 600, 
-                color: '#374151', 
+                color: theme.text.primary, 
                 display: 'block', 
                 marginBottom: '0.5rem' 
               }}>
@@ -616,14 +624,16 @@ const VentasDetalle = () => {
                 style={{
                   width: '100%',
                   padding: '0.5rem',
-                  border: '1px solid #d1d5db',
+                  border: `1px solid ${theme.input.border}`,
                   borderRadius: '0.375rem',
                   fontSize: isMobile ? '16px' : '0.875rem',
                   boxSizing: 'border-box',
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
                   appearance: 'none',
-                  maxWidth: '100%'
+                  maxWidth: '100%',
+                  backgroundColor: theme.input.bg,
+                  color: theme.text.primary
                 }}
               />
             </div>
@@ -632,7 +642,7 @@ const VentasDetalle = () => {
               <label style={{ 
                 fontSize: '0.875rem', 
                 fontWeight: 600, 
-                color: '#374151', 
+                color: theme.text.primary, 
                 display: 'block', 
                 marginBottom: '0.5rem' 
               }}>
@@ -645,14 +655,16 @@ const VentasDetalle = () => {
                 style={{
                   width: '100%',
                   padding: '0.5rem',
-                  border: '1px solid #d1d5db',
+                  border: `1px solid ${theme.input.border}`,
                   borderRadius: '0.375rem',
                   fontSize: isMobile ? '16px' : '0.875rem',
                   boxSizing: 'border-box',
                   WebkitAppearance: 'none',
                   MozAppearance: 'none',
                   appearance: 'none',
-                  maxWidth: '100%'
+                  maxWidth: '100%',
+                  backgroundColor: theme.input.bg,
+                  color: theme.text.primary
                 }}
               />
             </div>
@@ -661,7 +673,7 @@ const VentasDetalle = () => {
               <label style={{ 
                 fontSize: '0.875rem', 
                 fontWeight: 600, 
-                color: '#374151', 
+                color: theme.text.primary, 
                 display: 'block', 
                 marginBottom: '0.5rem' 
               }}>
@@ -673,7 +685,7 @@ const VentasDetalle = () => {
                 style={{
                   width: '100%',
                   padding: '0.5rem',
-                  border: '1px solid #d1d5db',
+                  border: `1px solid ${theme.input.border}`,
                   borderRadius: '0.375rem',
                   fontSize: isMobile ? '16px' : '0.875rem',
                   boxSizing: 'border-box',
@@ -685,7 +697,9 @@ const VentasDetalle = () => {
                   backgroundRepeat: 'no-repeat',
                   backgroundPosition: 'right 0.5rem center',
                   backgroundSize: '1.25rem',
-                  paddingRight: '2.5rem'
+                  paddingRight: '2.5rem',
+                  backgroundColor: theme.input.bg,
+                  color: theme.text.primary
                 }}
               >
                 <option value="">Todos</option>
@@ -704,8 +718,8 @@ const VentasDetalle = () => {
               onClick={aplicarFiltros}
               style={{
                 padding: '0.5rem 1.5rem',
-                backgroundColor: '#1e40af',
-                color: 'white',
+                backgroundColor: theme.brand.primary,
+                color: theme.text.white,
                 border: 'none',
                 borderRadius: '0.375rem',
                 cursor: 'pointer',
@@ -719,9 +733,9 @@ const VentasDetalle = () => {
               onClick={limpiarFiltros}
               style={{
                 padding: '0.5rem 1.5rem',
-                backgroundColor: 'white',
-                color: '#374151',
-                border: '1px solid #d1d5db',
+                backgroundColor: theme.bg.card,
+                color: theme.text.primary,
+                border: `1px solid ${theme.border.light}`,
                 borderRadius: '0.375rem',
                 cursor: 'pointer',
                 fontWeight: 600,
@@ -744,10 +758,10 @@ const VentasDetalle = () => {
           flexShrink: 0
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             padding: isMobile ? '0.75rem' : '1rem',
             borderRadius: '0.5rem',
-            border: '2px solid #e5e7eb'
+            border: `2px solid ${theme.border.light}`
           }}>
             <div style={{ 
               display: 'flex',
@@ -756,7 +770,7 @@ const VentasDetalle = () => {
               marginBottom: '0.25rem'
             }}>
               {isMobile && <ShoppingCart size={14} style={{ color: '#1e40af' }} />}
-              <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', color: '#6b7280' }}>
+              <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', color: theme.text.secondary }}>
                 Total Ventas
               </div>
             </div>
@@ -770,10 +784,10 @@ const VentasDetalle = () => {
           </div>
 
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             padding: isMobile ? '0.75rem' : '1rem',
             borderRadius: '0.5rem',
-            border: '2px solid #e5e7eb'
+            border: `2px solid ${theme.border.light}`
           }}>
             <div style={{ 
               display: 'flex',
@@ -782,7 +796,7 @@ const VentasDetalle = () => {
               marginBottom: '0.25rem'
             }}>
               {isMobile && <DollarSign size={14} style={{ color: '#10b981' }} />}
-              <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', color: '#6b7280' }}>
+              <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', color: theme.text.secondary }}>
                 Total Recaudado
               </div>
             </div>
@@ -798,10 +812,10 @@ const VentasDetalle = () => {
           {!isMobile && (
             <>
               <div style={{
-                backgroundColor: 'white',
+                backgroundColor: theme.bg.card,
                 padding: '1rem',
                 borderRadius: '0.5rem',
-                border: '2px solid #e5e7eb'
+                border: `2px solid ${theme.border.light}`
               }}>
                 <div style={{ 
                   display: 'flex',
@@ -810,7 +824,7 @@ const VentasDetalle = () => {
                   marginBottom: '0.25rem'
                 }}>
                   <TrendingUp size={14} style={{ color: '#f59e0b' }} />
-                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                  <div style={{ fontSize: '0.875rem', color: theme.text.secondary }}>
                     Promedio por Venta
                   </div>
                 </div>
@@ -820,10 +834,10 @@ const VentasDetalle = () => {
               </div>
 
               <div style={{
-                backgroundColor: 'white',
+                backgroundColor: theme.bg.card,
                 padding: '1rem',
                 borderRadius: '0.5rem',
-                border: '2px solid #e5e7eb'
+                border: `2px solid ${theme.border.light}`
               }}>
                 <div style={{ 
                   display: 'flex',
@@ -832,7 +846,7 @@ const VentasDetalle = () => {
                   marginBottom: '0.25rem'
                 }}>
                   <CreditCard size={14} style={{ color: '#8b5cf6' }} />
-                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                  <div style={{ fontSize: '0.875rem', color: theme.text.secondary }}>
                     Efectivo / Normal
                   </div>
                 </div>
@@ -858,9 +872,9 @@ const VentasDetalle = () => {
           <div style={{ textAlign: 'center', padding: isMobile ? '2rem 1rem' : '3rem' }}>
             <Loader 
               size={isMobile ? 40 : 48} 
-              style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: '#1e40af' }} 
+              style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: theme.brand.primary }} 
             />
-            <p style={{ marginTop: '1rem', color: '#6b7280', fontSize: isMobile ? '0.875rem' : '1rem' }}>
+            <p style={{ marginTop: '1rem', color: theme.text.secondary, fontSize: isMobile ? '0.875rem' : '1rem' }}>
               Cargando ventas...
             </p>
           </div>
@@ -868,14 +882,14 @@ const VentasDetalle = () => {
           <div style={{
             textAlign: 'center',
             padding: isMobile ? '2rem 1rem' : '3rem',
-            backgroundColor: 'white',
+            backgroundColor: theme.bg.card,
             borderRadius: '0.5rem',
-            border: '2px solid #e5e7eb'
+            border: `2px solid ${theme.border.light}`
           }}>
-            <Search size={isMobile ? 40 : 48} style={{ margin: '0 auto', color: '#d1d5db' }} />
+            <Search size={isMobile ? 40 : 48} style={{ margin: '0 auto', color: theme.border.medium }} />
             <p style={{ 
               marginTop: '1rem', 
-              color: '#6b7280',
+              color: theme.text.secondary,
               fontSize: isMobile ? '0.875rem' : '1rem'
             }}>
               No se encontraron ventas con los filtros aplicados
@@ -906,8 +920,8 @@ const VentasDetalle = () => {
                       key={venta.id}
                       ref={isLast ? lastVentaRef : null}
                       style={{
-                        backgroundColor: 'white',
-                        border: '2px solid #e5e7eb',
+                        backgroundColor: theme.bg.card,
+                        border: `2px solid ${theme.border.light}`,
                         borderRadius: '0.5rem',
                         overflow: 'hidden',
                         transition: 'all 0.2s'
@@ -923,7 +937,7 @@ const VentasDetalle = () => {
                           gridTemplateColumns: '80px 1fr 150px 150px 120px 100px 50px',
                           alignItems: 'center',
                           gap: '1rem',
-                          backgroundColor: isExpanded ? '#f3f4f6' : 'white'
+                          backgroundColor: isExpanded ? theme.bg.hover : theme.bg.card
                         }}
                       >
                         <div style={{ fontWeight: 'bold', color: '#1e40af' }}>
@@ -931,15 +945,15 @@ const VentasDetalle = () => {
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <Calendar size={16} style={{ color: '#6b7280' }} />
-                          <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                          <Calendar size={16} style={{ color: theme.text.secondary }} />
+                          <span style={{ fontSize: '0.875rem', color: theme.text.primary }}>
                             {formatFecha(venta.fecha)}
                           </span>
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <User size={16} style={{ color: '#6b7280' }} />
-                          <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                          <User size={16} style={{ color: theme.text.secondary }} />
+                          <span style={{ fontSize: '0.875rem', color: theme.text.primary }}>
                             {venta.usuario_nombre_completo || venta.usuario_nombre}
                           </span>
                         </div>
@@ -957,7 +971,7 @@ const VentasDetalle = () => {
                           </span>
                         </div>
 
-                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                        <div style={{ fontSize: '0.875rem', color: theme.text.secondary }}>
                           {venta.cantidad_items} item{venta.cantidad_items !== 1 ? 's' : ''}
                         </div>
 
@@ -965,7 +979,7 @@ const VentasDetalle = () => {
                           {formatMoney(venta.total)}
                         </div>
 
-                        <div>
+                        <div style={{ color: theme.text.secondary }}>
                           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                         </div>
                       </div>
@@ -974,43 +988,43 @@ const VentasDetalle = () => {
                       {isExpanded && (
                         <div style={{
                           padding: '1rem',
-                          borderTop: '1px solid #e5e7eb',
-                          backgroundColor: '#f9fafb'
+                          borderTop: `1px solid ${theme.border.light}`,
+                          backgroundColor: theme.bg.secondary
                         }}>
-                          <h4 style={{ fontWeight: 600, marginBottom: '0.75rem', color: '#374151' }}>
+                          <h4 style={{ fontWeight: 600, marginBottom: '0.75rem', color: theme.text.primary }}>
                             Productos:
                           </h4>
                           
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
-                              <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                                <th style={{ textAlign: 'left', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                              <tr style={{ borderBottom: `2px solid ${theme.border.light}` }}>
+                                <th style={{ textAlign: 'left', padding: '0.5rem', fontSize: '0.875rem', color: theme.text.secondary }}>
                                   Producto
                                 </th>
-                                <th style={{ textAlign: 'center', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                                <th style={{ textAlign: 'center', padding: '0.5rem', fontSize: '0.875rem', color: theme.text.secondary }}>
                                   Cantidad
                                 </th>
-                                <th style={{ textAlign: 'right', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                                <th style={{ textAlign: 'right', padding: '0.5rem', fontSize: '0.875rem', color: theme.text.secondary }}>
                                   Precio Unit.
                                 </th>
-                                <th style={{ textAlign: 'right', padding: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                                <th style={{ textAlign: 'right', padding: '0.5rem', fontSize: '0.875rem', color: theme.text.secondary }}>
                                   Subtotal
                                 </th>
                               </tr>
                             </thead>
                             <tbody>
                               {venta.items.map((item, idx) => (
-                                <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
+                                <tr key={idx} style={{ borderBottom: `1px solid ${theme.border.light}` }}>
+                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: theme.text.primary }}>
                                     {item.producto_nombre}
                                   </td>
-                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'center' }}>
+                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'center', color: theme.text.primary }}>
                                     {item.cantidad}
                                   </td>
-                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'right' }}>
+                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'right', color: theme.text.primary }}>
                                     {formatMoney(item.precio_unitario)}
                                   </td>
-                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'right', fontWeight: 600 }}>
+                                  <td style={{ padding: '0.75rem', fontSize: '0.875rem', textAlign: 'right', fontWeight: 600, color: theme.text.primary }}>
                                     {formatMoney(item.subtotal)}
                                   </td>
                                 </tr>
@@ -1037,11 +1051,11 @@ const VentasDetalle = () => {
               <div style={{ textAlign: 'center', padding: isMobile ? '1.5rem' : '2rem' }}>
                 <Loader 
                   size={isMobile ? 28 : 32} 
-                  style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: '#1e40af' }} 
+                  style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: theme.brand.primary }} 
                 />
                 <p style={{ 
                   marginTop: '0.5rem', 
-                  color: '#6b7280', 
+                  color: theme.text.secondary, 
                   fontSize: isMobile ? '0.8125rem' : '0.875rem'
                 }}>
                   Cargando más ventas...
@@ -1053,7 +1067,7 @@ const VentasDetalle = () => {
               <div style={{ 
                 textAlign: 'center', 
                 padding: isMobile ? '1.5rem' : '2rem', 
-                color: '#6b7280',
+                color: theme.text.secondary,
                 fontSize: isMobile ? '0.875rem' : '1rem'
               }}>
                 Todas las ventas cargadas ({total} total)

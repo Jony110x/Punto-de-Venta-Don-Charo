@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const Dashboard = () => {
   const toast = useToast();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   
   // Estados principales
   const [stats, setStats] = useState({
@@ -92,7 +92,15 @@ const Dashboard = () => {
         setProductosStockBajo(productos || []);
         setSkipBajo(LIMIT_BAJO);
       } else {
-        setProductosStockBajo(prev => [...prev, ...(productos || [])]);
+        setProductosStockBajo(prev => {
+          const map = new Map(prev.map(p => [p.id, p]));
+
+          (productos || []).forEach(p => {
+             map.set(p.id, p); // si existe, lo reemplaza; si no, lo agrega
+           });
+
+           return Array.from(map.values());
+          });
         setSkipBajo(currentSkip + LIMIT_BAJO);
       }
       
@@ -132,7 +140,15 @@ const Dashboard = () => {
         setProductosStockCritico(productos || []);
         setSkipCritico(LIMIT_CRITICO);
       } else {
-        setProductosStockCritico(prev => [...prev, ...(productos || [])]);
+        setProductosStockCritico(prev => {
+        const map = new Map(prev.map(p => [p.id, p]));
+
+        (productos || []).forEach(p => {
+          map.set(p.id, p);
+        });
+
+        return Array.from(map.values());
+        });
         setSkipCritico(currentSkip + LIMIT_CRITICO);
       }
       
@@ -302,7 +318,7 @@ const Dashboard = () => {
         Panel de Control - Hoy
       </h2>
 
-      {/* Grid de tarjetas de estadísticas - Responsive */}
+      {/* Grid de tarjetas de estadísticas - Modo claro original, modo oscuro con tema */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
@@ -321,16 +337,16 @@ const Dashboard = () => {
           <>
             {/* Tarjeta de ganancias */}
             <div style={{
-              backgroundColor: '#d1fae5',
+              backgroundColor: isDark ? theme.bg.card : '#d1fae5',
               padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
-              border: '2px solid #86efac'
+              border: isDark ? `2px solid ${theme.border.light}` : '2px solid #86efac'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ 
                     fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)', 
-                    color: '#15803d', 
+                    color: isDark ? theme.text.secondary : '#15803d', 
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -341,7 +357,7 @@ const Dashboard = () => {
                   <p style={{ 
                     fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', 
                     fontWeight: 'bold', 
-                    color: '#166534',
+                    color: isDark ? theme.brand.success : '#166534',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -355,16 +371,16 @@ const Dashboard = () => {
 
             {/* Tarjeta de ventas */}
             <div style={{
-              backgroundColor: '#dbeafe',
+              backgroundColor: isDark ? theme.bg.card : '#dbeafe',
               padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
-              border: '2px solid #93c5fd'
+              border: isDark ? `2px solid ${theme.border.light}` : '2px solid #93c5fd'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ 
                     fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)', 
-                    color: '#1e40af', 
+                    color: isDark ? theme.text.secondary : '#1e40af', 
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -375,7 +391,7 @@ const Dashboard = () => {
                   <p style={{ 
                     fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', 
                     fontWeight: 'bold', 
-                    color: '#1e3a8a',
+                    color: isDark ? theme.brand.primary : '#1e3a8a',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -389,16 +405,16 @@ const Dashboard = () => {
 
             {/* Tarjeta de productos vendidos */}
             <div style={{
-              backgroundColor: '#fce7f3',
+              backgroundColor: isDark ? theme.bg.card : '#fce7f3',
               padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
-              border: '2px solid #fbcfe8'
+              border: isDark ? `2px solid ${theme.border.light}` : '2px solid #fbcfe8'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ 
                     fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)', 
-                    color: '#9f1239', 
+                    color: isDark ? theme.text.secondary : '#9f1239', 
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -409,7 +425,7 @@ const Dashboard = () => {
                   <p style={{ 
                     fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', 
                     fontWeight: 'bold', 
-                    color: '#881337',
+                    color: isDark ? '#ec4899' : '#881337',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -423,16 +439,16 @@ const Dashboard = () => {
 
             {/* Tarjeta de transacciones */}
             <div style={{
-              backgroundColor: '#f3e8ff',
+              backgroundColor: isDark ? theme.bg.card : '#f3e8ff',
               padding: 'clamp(0.75rem, 2vw, 1.25rem)',
               borderRadius: '0.5rem',
-              border: '2px solid #d8b4fe'
+              border: isDark ? `2px solid ${theme.border.light}` : '2px solid #d8b4fe'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ 
                     fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)', 
-                    color: '#6b21a8', 
+                    color: isDark ? theme.text.secondary : '#6b21a8', 
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -443,7 +459,7 @@ const Dashboard = () => {
                   <p style={{ 
                     fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', 
                     fontWeight: 'bold', 
-                    color: '#581c87',
+                    color: isDark ? '#a855f7' : '#581c87',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -522,9 +538,9 @@ const Dashboard = () => {
             {/* Sección de productos con stock crítico */}
             {(totalCritico > 0) && (
               <div style={{
-                backgroundColor: '#fee2e2',
+                backgroundColor: isDark ? theme.bg.card : '#fee2e2',
                 borderRadius: '0.5rem',
-                border: '2px solid #fca5a5',
+                border: isDark ? `2px solid ${theme.border.light}` : '2px solid #fca5a5',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
@@ -550,7 +566,7 @@ const Dashboard = () => {
                     flexShrink: 0,
                     gap: '0.5rem'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fecaca'}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? theme.bg.hover : '#fecaca'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
@@ -558,7 +574,7 @@ const Dashboard = () => {
                     <h3 style={{ 
                       fontSize: 'clamp(0.875rem, 3vw, 1.25rem)', 
                       fontWeight: 'bold', 
-                      color: '#991b1b', 
+                      color: isDark ? theme.text.primary : '#991b1b', 
                       margin: 0,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -579,9 +595,9 @@ const Dashboard = () => {
                     </span>
                   </div>
                   {criticoColapsado ? (
-                    <ChevronDown size={window.innerWidth < 640 ? 20 : 24} style={{ color: '#991b1b', flexShrink: 0 }} />
+                    <ChevronDown size={window.innerWidth < 640 ? 20 : 24} style={{ color: isDark ? theme.text.secondary : '#991b1b', flexShrink: 0 }} />
                   ) : (
-                    <ChevronUp size={window.innerWidth < 640 ? 20 : 24} style={{ color: '#991b1b', flexShrink: 0 }} />
+                    <ChevronUp size={window.innerWidth < 640 ? 20 : 24} style={{ color: isDark ? theme.text.secondary : '#991b1b', flexShrink: 0 }} />
                   )}
                 </div>
 
@@ -612,8 +628,8 @@ const Dashboard = () => {
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
-                              padding: 'clamp(0.5rem, 2vw, 0.75rem)',
-                              backgroundColor: '#fff',
+                              padding: 'clamp(0.5rem, 2vw, 0.5rem)',
+                              backgroundColor: isDark ? theme.bg.secondary : '#fff',
                               borderRadius: '0.375rem',
                               border: '2px solid #dc2626',
                               flexShrink: 0,
@@ -628,14 +644,15 @@ const Dashboard = () => {
                               minWidth: 0,
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap'
+                              whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap',
+                              color: isDark ? theme.text.primary : '#000'
                             }}>
                               {producto.nombre}
                             </span>
                             <span style={{ 
                               color: '#dc2626', 
                               fontWeight: 'bold',
-                              backgroundColor: '#fee2e2',
+                              backgroundColor: isDark ? theme.bg.hover : '#fee2e2',
                               padding: '0.25rem 0.75rem',
                               borderRadius: '0.25rem',
                               fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
@@ -652,7 +669,7 @@ const Dashboard = () => {
                         <div style={{ 
                           padding: 'clamp(0.5rem, 2vw, 0.75rem)', 
                           textAlign: 'center',
-                          color: '#991b1b',
+                          color: isDark ? theme.text.secondary : '#991b1b',
                           fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                           flexShrink: 0
                         }}>
@@ -664,7 +681,7 @@ const Dashboard = () => {
                         <div style={{ 
                           padding: 'clamp(0.5rem, 2vw, 0.75rem)', 
                           textAlign: 'center',
-                          color: '#991b1b',
+                          color: isDark ? theme.text.secondary : '#991b1b',
                           fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                           flexShrink: 0
                         }}>
@@ -680,7 +697,7 @@ const Dashboard = () => {
             {/* Sección de productos con stock bajo */}
             {(totalBajo > 0) && (
               <div style={{
-                backgroundColor: theme.bg.card,
+                backgroundColor: isDark ? theme.bg.card : theme.bg.card,
                 borderRadius: '0.5rem',
                 border: `2px solid ${theme.border.light}`,
                 overflow: 'hidden',
@@ -771,9 +788,9 @@ const Dashboard = () => {
                               justifyContent: 'space-between',
                               alignItems: 'center',
                               padding: 'clamp(0.5rem, 2vw, 0.75rem)',
-                              backgroundColor: '#fef3c7',
+                              backgroundColor: isDark ? theme.bg.secondary : '#fef3c7',
                               borderRadius: '0.375rem',
-                              border: '1px solid #fcd34d',
+                              border: isDark ? `2px solid #f59e0b` : '1px solid #fcd34d',
                               flexShrink: 0,
                               gap: '0.5rem',
                               flexWrap: window.innerWidth < 640 ? 'wrap' : 'nowrap'
@@ -786,12 +803,13 @@ const Dashboard = () => {
                               minWidth: 0,
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap'
+                              whiteSpace: window.innerWidth < 640 ? 'normal' : 'nowrap',
+                              color: isDark ? theme.text.primary : '#000'
                             }}>
                               {producto.nombre}
                             </span>
                             <span style={{ 
-                              color: '#92400e', 
+                              color: isDark ? theme.text.secondary : '#92400e', 
                               fontWeight: 'bold',
                               fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                               whiteSpace: 'nowrap',
@@ -807,7 +825,7 @@ const Dashboard = () => {
                         <div style={{ 
                           padding: 'clamp(0.5rem, 2vw, 0.75rem)', 
                           textAlign: 'center',
-                          color: '#92400e',
+                          color: isDark ? theme.text.secondary : '#92400e',
                           fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                           flexShrink: 0
                         }}>
@@ -819,7 +837,7 @@ const Dashboard = () => {
                         <div style={{ 
                           padding: 'clamp(0.5rem, 2vw, 0.75rem)', 
                           textAlign: 'center',
-                          color: '#92400e',
+                          color: isDark ? theme.text.secondary : '#92400e',
                           fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                           flexShrink: 0
                         }}>
@@ -835,20 +853,20 @@ const Dashboard = () => {
             {/* Mensaje cuando no hay alertas de stock */}
             {totalCritico === 0 && totalBajo === 0 && (
               <div style={{
-                backgroundColor: '#d1fae5',
+                backgroundColor: isDark ? theme.bg.card : '#d1fae5',
                 padding: 'clamp(1rem, 3vw, 2rem)',
                 borderRadius: '0.5rem',
-                border: '2px solid #86efac',
+                border: isDark ? `2px solid ${theme.brand.success}` : '2px solid #86efac',
                 textAlign: 'center',
                 flexShrink: 0
               }}>
                 <p style={{ 
                   fontSize: 'clamp(0.875rem, 3vw, 1.125rem)', 
                   fontWeight: 600, 
-                  color: '#065f46',
+                  color: isDark ? theme.brand.success : '#065f46',
                   margin: 0
                 }}>
-                  No hay productos con stock bajo o crítico
+                  {isDark ? '✓ ' : ''}No hay productos con stock bajo o crítico
                 </p>
               </div>
             )}
