@@ -46,7 +46,7 @@ class ConnectionDetector {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-    const response = await fetch('http://localhost:8000/api/health', {
+    const response = await fetch('http://66.97.37.81/api/health', {
       method: 'GET',
       signal: controller.signal,
       cache: 'no-cache',
