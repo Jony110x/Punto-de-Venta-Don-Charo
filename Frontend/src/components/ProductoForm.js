@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X, Camera } from 'lucide-react';
 import { getCategorias } from '../api/api';
 import { useToast } from '../Toast';
 import { useTheme } from '../context/ThemeContext';
+import BarcodeScanner from './BarcodeScanner';
+
 
 const ProductoForm = ({ producto, onClose, onSubmit }) => {
   const toast = useToast();
@@ -42,12 +44,15 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
   const timerBusquedaRef = useRef(null);
   const scrollAjustadoRef = useRef(false);
 
-  // ✅ CALCULAR PRECIO DE VENTA AUTOMÁTICAMENTE
+  // Scanner con celular
+  const [showScanner, setShowScanner] = useState(false);
+
+  // CALCULAR PRECIO DE VENTA AUTOMÁTICAMENTE
   const precioVentaCalculado = formData.precio_costo && formData.margen_porcentaje
     ? (parseFloat(formData.precio_costo) * (1 + parseFloat(formData.margen_porcentaje) / 100)).toFixed(2)
     : 0;
 
-  // ✅ CALCULAR GANANCIA POR UNIDAD
+  // CALCULAR GANANCIA POR UNIDAD
   const gananciaPorUnidad = formData.precio_costo
     ? (precioVentaCalculado - formData.precio_costo).toFixed(2)
     : 0;
@@ -258,6 +263,13 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Manejar código escaneado
+  const handleScanSuccess = (barcode) => {
+    setFormData(prev => ({ ...prev, codigo_barras: barcode }));
+    setShowScanner(false);
+    toast.success(`Código escaneado: ${barcode}`);
+  };
+
   // Validar y enviar formulario
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -272,7 +284,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
       return;
     }
     
-    // ✅ Enviar sin precio_venta, se calculará en backend
+    // Enviar sin precio_venta, se calculará en backend
     onSubmit(formData);
   };
 
@@ -405,7 +417,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                 />
               </div>
 
-              {/* ✅ NUEVO: Precio de Costo y Margen de Ganancia */}
+              {/* NUEVO: Precio de Costo y Margen de Ganancia */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
@@ -460,7 +472,7 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                 </div>
               </div>
 
-              {/* ✅ MOSTRAR PRECIO DE VENTA CALCULADO */}
+              {/* MOSTRAR PRECIO DE VENTA CALCULADO */}
               {formData.precio_costo > 0 && formData.margen_porcentaje >= 0 && (
                 <div style={{
                   backgroundColor: theme.bg.active,
@@ -677,30 +689,54 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
                   )}
                 </div>
 
-                {/* Código de barras */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
-                    Código de Barras <span style={{ color: theme.brand.danger }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="codigo_barras"
-                    value={formData.codigo_barras}
-                    onChange={handleChange}
-                    required
-                    className="input"
-                    placeholder="7891234567890"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      backgroundColor: theme.input.bg,
-                      border: `1px solid ${theme.input.border}`,
-                      borderRadius: '0.375rem',
-                      color: theme.text.primary,
-                      fontSize: '0.875rem'
-                    }}
-                  />
-                </div>
+                {/* Código de barras con botón de cámara */}
+<div>
+  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: theme.text.primary }}>
+    Código de Barras <span style={{ color: theme.brand.danger }}>*</span>
+  </label>
+  <div style={{ display: 'flex', gap: '0.5rem' }}>
+    <input
+      type="text"
+      name="codigo_barras"
+      value={formData.codigo_barras}
+      onChange={handleChange}
+      required
+      className="input"
+      placeholder="7891234567890"
+      style={{
+        flex: 1,
+        padding: '0.5rem',
+        backgroundColor: theme.input.bg,
+        border: `1px solid ${theme.input.border}`,
+        borderRadius: '0.375rem',
+        color: theme.text.primary,
+        fontSize: '0.875rem'
+      }}
+    />
+    <button
+      type="button"
+      onClick={() => setShowScanner(true)}
+      style={{
+        padding: '0.5rem 0.75rem',
+        backgroundColor: theme.brand.primary,
+        color: theme.text.white,
+        border: 'none',
+        borderRadius: '0.375rem',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'opacity 0.2s',
+        flexShrink: 0
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+      title="Escanear código de barras"
+    >
+      <Camera size={20} />
+    </button>
+  </div>
+</div>
               </div>
             </div>
           </div>
@@ -750,6 +786,13 @@ const ProductoForm = ({ producto, onClose, onSubmit }) => {
           </div>
         </form>
       </div>
+      {/* Scanner de códigos de barras */}
+      {showScanner && (
+        <BarcodeScanner
+          onScanSuccess={handleScanSuccess}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   );
 };
