@@ -9,7 +9,7 @@ import {
   updateProductoStock
 } from '../utils/indexedDB';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://66.97.37.81';
+const API_URL = process.env.REACT_APP_API_URL || 'https://doncharo.com.ar';
 
 // Configuración base de axios
 const api = axios.create({
