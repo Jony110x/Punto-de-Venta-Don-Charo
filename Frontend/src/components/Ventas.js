@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Search, ShoppingCart, Trash2, Scan, DollarSign, Banknote, X } from 'lucide-react';
+import { Plus, Search, ShoppingCart, Trash2, Scan, DollarSign, Banknote, X, Camera } from 'lucide-react';
 import { getProductos, createVenta, buscarPorCodigo, getCotizaciones } from '../api/api';
 import { useToast } from '../Toast';
 import { useTheme } from '../context/ThemeContext';
@@ -10,6 +10,7 @@ import {
   saveVentaPendiente, 
   updateProductoStock 
 } from '../utils/indexedDB';
+import BarcodeScanner from './BarcodeScanner';
 
 // Componente de tarjeta de producto memoizado - CON DARK MODE
 const ProductCard = React.memo(({ producto, onAgregar, monedaSeleccionada, cotizaciones, isMobile, theme }) => {
@@ -188,6 +189,7 @@ const Ventas = () => {
   const [monedaSeleccionada, setMonedaSeleccionada] = useState('ARS');
   const [metodoPago, setMetodoPago] = useState('normal');
   const [cotizaciones, setCotizaciones] = useState({ USD: 1, BRL: 1 });
+  const [showScanner, setShowScanner] = useState(false);
   
   // Estados de paginación
   const [skip, setSkip] = useState(0);
@@ -233,7 +235,7 @@ const Ventas = () => {
     }
 
     const handleGlobalKeyPress = (e) => {
-      if (e.key === 'Enter' && carrito.length > 0 && !isMobile) {
+      if (e.key === ' ' && carrito.length > 0 && !isMobile) {
         if (document.activeElement !== codigoInputRef.current) {
           e.preventDefault();
           finalizarVenta();
@@ -241,8 +243,8 @@ const Ventas = () => {
       }
     };
 
-    document.addEventListener('keypress', handleGlobalKeyPress);
-    return () => document.removeEventListener('keypress', handleGlobalKeyPress);
+    document.addEventListener('keydown', handleGlobalKeyPress);
+    return () => document.removeEventListener('keydown', handleGlobalKeyPress);
   }, [carrito, isMobile]);
 
   // Debounce para búsqueda
@@ -979,7 +981,7 @@ const Ventas = () => {
             )}
           </div>
 
-          {/* Lector de código de barras */}
+          {/* Lector de código de barras
           <div style={{
             backgroundColor: '#dbeafe',
             padding: isMobile ? '0.625rem' : '0.75rem',
@@ -1043,37 +1045,70 @@ const Ventas = () => {
                 {buscandoCodigo ? 'Buscando...' : 'Buscar'}
               </button>
             </div>
-          </div>
+          </div> */}
 
           {/* Búsqueda manual */}
-          <div style={{
-            backgroundColor: theme.bg.card,
-            padding: isMobile ? '0.625rem' : '0.75rem',
-            borderRadius: '0.5rem',
-            border: `2px solid ${theme.border.light}`,
-            marginBottom: isMobile ? '0.5rem' : '0.75rem',
-            flexShrink: 0
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Search size={18} style={{ color: theme.text.secondary }} />
-              <input
-                type="text"
-                placeholder="Buscar producto..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="input"
-                style={{ 
-                  border: 'none', 
-                  outline: 'none', 
-                  padding: '0.25rem', 
-                  flex: 1,
-                  fontSize: isMobile ? '16px' : '0.875rem',
-                  backgroundColor: 'transparent',
-                  color: theme.text.primary
-                }}
-              />
-            </div>
-          </div>
+         <div style={{
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+  marginBottom: isMobile ? '0.5rem' : '0.75rem',
+  flexShrink: 0
+}}>
+
+  {/* RECUADRO DE BÚSQUEDA */}
+  <div style={{
+    backgroundColor: theme.bg.card,
+    padding: isMobile ? '0.625rem' : '0.75rem',
+    borderRadius: '0.5rem',
+    border: `2px solid ${theme.border.light}`,
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  }}>
+    <Search size={18} style={{ color: theme.text.secondary }} />
+
+    <input
+      type="text"
+      placeholder="Buscar producto..."
+      value={busqueda}
+      onChange={(e) => setBusqueda(e.target.value)}
+      style={{ 
+        border: 'none',
+        outline: 'none',
+        flex: 1,
+        fontSize: isMobile ? '16px' : '0.875rem',
+        backgroundColor: 'transparent',
+        color: theme.text.primary
+      }}
+    />
+  </div>
+
+  {/* BOTÓN FUERA DEL RECUADRO */}
+  {isMobile && (
+    <button
+      type="button"
+      onClick={() => setShowScanner(true)}
+      style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: '0.5rem',
+        border: 'none',
+        backgroundColor: theme.brand.primary,
+        color: theme.text.white,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer'
+      }}
+      title="Escanear"
+    >
+      <Camera size={20} />
+    </button>
+  )}
+
+</div>
 
           {/* Cotizaciones en mobile */}
           {isMobile && cotizaciones.dolarPromedio && (
@@ -1331,6 +1366,15 @@ const Ventas = () => {
           </div>
         </div>
       )}
+      {showScanner && (
+  <BarcodeScanner
+    onClose={() => setShowScanner(false)}
+    onScan={(codigo) => {
+      setShowScanner(false);
+      buscarProductoPorCodigo(codigo);
+    }}
+  />
+)}
     </div>
   );
 };
