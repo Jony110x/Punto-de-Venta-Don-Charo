@@ -1369,7 +1369,7 @@ const Ventas = () => {
       {showScanner && (
   <BarcodeScanner
     onClose={() => setShowScanner(false)}
-    onScan={(codigo) => {
+    onScanSuccess={(codigo) => {
       setShowScanner(false);
       buscarProductoPorCodigo(codigo);
     }}
