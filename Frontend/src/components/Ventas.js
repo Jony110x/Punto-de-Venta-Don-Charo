@@ -981,7 +981,7 @@ const Ventas = () => {
             )}
           </div>
 
-          {/* Lector de código de barras
+          {/* Lector de código de barras */}
           <div style={{
             backgroundColor: '#dbeafe',
             padding: isMobile ? '0.625rem' : '0.75rem',
@@ -1045,7 +1045,7 @@ const Ventas = () => {
                 {buscandoCodigo ? 'Buscando...' : 'Buscar'}
               </button>
             </div>
-          </div> */}
+          </div>
 
           {/* Búsqueda manual */}
          <div style={{
