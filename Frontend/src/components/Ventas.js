@@ -201,9 +201,11 @@ const Ventas = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [showCarritoModal, setShowCarritoModal] = useState(false);
+  const [codigoInputFocused, setCodigoInputFocused] = useState(false);
   
   // Referencias
   const codigoInputRef = useRef(null);
+  const busquedaInputRef = useRef(null);
   const gridRef = useRef(null);
   const observerRef = useRef(null);
   const debounceTimerRef = useRef(null);
@@ -231,52 +233,73 @@ const Ventas = () => {
   useEffect(() => {
     cargarCotizaciones();
     
-    // Mantener siempre el foco en el input del código de barras en desktop
-    const manteneFocoEnCodigo = () => {
-      if (!isMobile && codigoInputRef.current && !showCarritoModal) {
-        // Solo enfocar si no hay otro input/textarea enfocado (excepto el de búsqueda)
-        const activeElement = document.activeElement;
-        const esInputBusqueda = activeElement?.type === 'text' && activeElement !== codigoInputRef.current;
-        
-        if (!esInputBusqueda) {
-          codigoInputRef.current.focus();
-        }
-      }
-    };
-
     // Enfocar al cargar
-    manteneFocoEnCodigo();
+    if (!isMobile && codigoInputRef.current) {
+      codigoInputRef.current.focus();
+    }
 
-    // Re-enfocar cuando se hace clic fuera
-    const handleClick = () => {
-      setTimeout(manteneFocoEnCodigo, 10);
-    };
-
-    // Manejar tecla espacio para finalizar venta
-    const handleGlobalKeyPress = (e) => {
-      if (e.key === ' ' && carrito.length > 0 && !isMobile) {
-        if (document.activeElement !== codigoInputRef.current) {
-          e.preventDefault();
-          finalizarVenta();
-        }
+    // Auto-enfocar el campo de código cuando el usuario no está usando otros inputs
+    const handleGlobalClick = (e) => {
+      if (isMobile) return;
+      
+      // Si el clic fue en un input, textarea o botón, no hacer nada
+      const clickedElement = e.target;
+      if (
+        clickedElement.tagName === 'INPUT' || 
+        clickedElement.tagName === 'TEXTAREA' || 
+        clickedElement.tagName === 'BUTTON' ||
+        clickedElement.closest('button')
+      ) {
+        return;
+      }
+      
+      // Si se hizo clic en el fondo, volver al campo de código
+      if (codigoInputRef.current) {
+        codigoInputRef.current.focus();
       }
     };
 
-    document.addEventListener('click', handleClick);
+    // Manejar tecla espacio para finalizar venta - SIEMPRE ACTIVO
+    const handleGlobalKeyPress = (e) => {
+      // Si hay productos en el carrito y se presiona espacio
+      if (e.key === ' ' && carrito.length > 0 && !isMobile) {
+        // Prevenir el comportamiento por defecto
+        e.preventDefault();
+        
+        // Si estamos en el campo de código de barras y hay texto, no finalizar venta
+        if (document.activeElement === codigoInputRef.current && codigoBarras.trim().length > 0) {
+          return; // Dejar que se escriba el espacio en el código
+        }
+        
+        // Si estamos en el campo de búsqueda, no finalizar venta
+        if (document.activeElement === busquedaInputRef.current) {
+          return;
+        }
+        
+        // En cualquier otro caso, finalizar la venta
+        finalizarVenta();
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
     document.addEventListener('keydown', handleGlobalKeyPress);
     
     return () => {
-      document.removeEventListener('click', handleClick);
+      document.removeEventListener('click', handleGlobalClick);
       document.removeEventListener('keydown', handleGlobalKeyPress);
     };
-  }, [carrito, isMobile, showCarritoModal]);
+  }, [carrito, isMobile, codigoBarras]);
 
-  // Re-enfocar después de agregar un producto
+  // Re-enfocar después de agregar un producto - MEJORADO
   useEffect(() => {
-    if (!isMobile && codigoInputRef.current) {
+    if (!isMobile && codigoInputRef.current && carrito.length > 0) {
+      // Usar un timeout muy corto para asegurar que el DOM se actualice
       const timer = setTimeout(() => {
-        codigoInputRef.current.focus();
-      }, 100);
+        if (codigoInputRef.current) {
+          codigoInputRef.current.focus();
+          codigoInputRef.current.select(); // Seleccionar el texto si hay algo
+        }
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [carrito.length, isMobile]);
@@ -453,7 +476,7 @@ const Ventas = () => {
         toast.warning('Producto sin stock disponible');
         setCodigoBarras('');
         if (codigoInputRef.current && !isMobile) {
-          codigoInputRef.current.focus();
+          setTimeout(() => codigoInputRef.current.focus(), 50);
         }
         return;
       }
@@ -468,22 +491,25 @@ const Ventas = () => {
       });
       
       toast.success(`${producto.nombre} agregado al carrito`);
+      
+      // Limpiar el campo inmediatamente
       setCodigoBarras('');
       
-      // Re-enfocar el input
+      // Re-enfocar el input inmediatamente para el siguiente escaneo
       if (codigoInputRef.current && !isMobile) {
-        setTimeout(() => {
-          codigoInputRef.current.focus();
-        }, 100);
+        // Forzar el enfoque inmediato
+        requestAnimationFrame(() => {
+          if (codigoInputRef.current) {
+            codigoInputRef.current.focus();
+          }
+        });
       }
     } catch (error) {
       console.error('Error buscando producto:', error);
       toast.error('Producto no encontrado');
       setCodigoBarras('');
       if (codigoInputRef.current && !isMobile) {
-        setTimeout(() => {
-          codigoInputRef.current.focus();
-        }, 100);
+        setTimeout(() => codigoInputRef.current.focus(), 50);
       }
     } finally {
       setBuscandoCodigo(false);
@@ -607,10 +633,13 @@ const Ventas = () => {
           cargarProductos(0, true);
         }
         
+        // Re-enfocar inmediatamente después de finalizar venta
         if (codigoInputRef.current && !isMobile) {
-          setTimeout(() => {
-            codigoInputRef.current.focus();
-          }, 100);
+          requestAnimationFrame(() => {
+            if (codigoInputRef.current) {
+              codigoInputRef.current.focus();
+            }
+          });
         }
         
         return;
@@ -628,10 +657,13 @@ const Ventas = () => {
         cargarProductos(0, true);
       }
       
+      // Re-enfocar inmediatamente después de finalizar venta
       if (codigoInputRef.current && !isMobile) {
-        setTimeout(() => {
-          codigoInputRef.current.focus();
-        }, 100);
+        requestAnimationFrame(() => {
+          if (codigoInputRef.current) {
+            codigoInputRef.current.focus();
+          }
+        });
       }
     } catch (error) {
       console.error('Error creando venta:', error);
@@ -685,7 +717,10 @@ const Ventas = () => {
                 {['ARS', 'USD', 'BRL'].map(moneda => (
                   <button
                     key={moneda}
-                    onClick={() => setMonedaSeleccionada(moneda)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setMonedaSeleccionada(moneda);
+                    }}
                     style={{
                       flex: 1,
                       padding: isMobile ? '0.5rem' : '0.375rem',
@@ -716,7 +751,10 @@ const Ventas = () => {
               </label>
               <div style={{ display: 'flex', gap: '0.375rem' }}>
                 <button
-                  onClick={() => setMetodoPago('normal')}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setMetodoPago('normal');
+                  }}
                   style={{
                     flex: 1,
                     padding: isMobile ? '0.625rem' : '0.5rem',
@@ -737,7 +775,10 @@ const Ventas = () => {
                   Normal
                 </button>
                 <button
-                  onClick={() => setMetodoPago('efectivo')}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setMetodoPago('efectivo');
+                  }}
                   style={{
                     flex: 1,
                     padding: isMobile ? '0.625rem' : '0.5rem',
@@ -802,7 +843,10 @@ const Ventas = () => {
                       </div>
                     </div>
                     <button
-                      onClick={() => eliminarDelCarrito(item.producto_id)}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); // Prevenir que el botón tome el foco
+                        eliminarDelCarrito(item.producto_id);
+                      }}
                       style={{
                         padding: '0.25rem',
                         backgroundColor: 'transparent',
@@ -817,7 +861,10 @@ const Ventas = () => {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <button
-                      onClick={() => modificarCantidad(item.producto_id, item.cantidad - 1)}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); // Prevenir que el botón tome el foco
+                        modificarCantidad(item.producto_id, item.cantidad - 1);
+                      }}
                       style={{
                         padding: isMobile ? '0.375rem 0.75rem' : '0.25rem 0.625rem',
                         backgroundColor: theme.bg.tertiary,
@@ -841,7 +888,10 @@ const Ventas = () => {
                       {item.cantidad}
                     </span>
                     <button
-                      onClick={() => modificarCantidad(item.producto_id, item.cantidad + 1)}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); // Prevenir que el botón tome el foco
+                        modificarCantidad(item.producto_id, item.cantidad + 1);
+                      }}
                       style={{
                         padding: isMobile ? '0.375rem 0.75rem' : '0.25rem 0.625rem',
                         backgroundColor: theme.bg.tertiary,
@@ -908,7 +958,10 @@ const Ventas = () => {
               </div>
             )}
             <button
-              onClick={finalizarVenta}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                finalizarVenta();
+              }}
               className="btn"
               style={{ 
                 width: '100%', 
@@ -1039,12 +1092,13 @@ const Ventas = () => {
 
           {/* Lector de código de barras - MEJORADO */}
           <div style={{
-            backgroundColor: '#dbeafe',
+            backgroundColor: codigoInputFocused && !isMobile ? '#dbeafe' : '#dbeafe',
             padding: isMobile ? '0.625rem' : '0.75rem',
             borderRadius: '0.5rem',
-            border: '2px solid #3b82f6',
+            border: codigoInputFocused && !isMobile ? '2px solid #3b82f6' : '2px solid #3b82f6',
             marginBottom: isMobile ? '0.5rem' : '0.75rem',
-            flexShrink: 0
+            flexShrink: 0,
+            position: 'relative'
           }}>
             <div style={{ 
               display: 'flex', 
@@ -1056,10 +1110,26 @@ const Ventas = () => {
               <label style={{ 
                 fontWeight: 600, 
                 color: '#1e40af', 
-                fontSize: isMobile ? '0.8125rem' : '0.875rem' 
+                fontSize: isMobile ? '0.8125rem' : '0.875rem',
+                flex: 1
               }}>
-                Código de Barras {!isMobile && '(siempre activo)'}
+                Código de Barras
               </label>
+              {codigoInputFocused && !isMobile && (
+                <span style={{
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  padding: '0.125rem 0.5rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.625rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  animation: 'pulse 2s ease-in-out infinite'
+                }}>
+                  ● Listo
+                </span>
+              )}
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
@@ -1069,26 +1139,24 @@ const Ventas = () => {
                 value={codigoBarras}
                 onChange={(e) => setCodigoBarras(e.target.value)}
                 onKeyPress={handleCodigoKeyPress}
-                onBlur={() => {
-                  // Volver a enfocar después de un breve delay si estamos en desktop
-                  if (!isMobile) {
-                    setTimeout(() => {
-                      if (codigoInputRef.current) {
-                        codigoInputRef.current.focus();
-                      }
-                    }, 100);
-                  }
-                }}
+                onFocus={() => setCodigoInputFocused(true)}
+                onBlur={() => setCodigoInputFocused(false)}
                 disabled={buscandoCodigo}
                 className="input"
                 style={{ 
                   flex: 1,
                   fontSize: isMobile ? '16px' : '1rem',
                   backgroundColor: theme.input.bg,
-                  border: `1px solid ${theme.input.border}`,
+                  border: codigoInputFocused && !isMobile 
+                    ? '2px solid #3b82f6' 
+                    : `1px solid ${theme.input.border}`,
                   color: theme.text.primary,
                   padding: '0.5rem',
-                  borderRadius: '0.375rem'
+                  borderRadius: '0.375rem',
+                  boxShadow: codigoInputFocused && !isMobile 
+                    ? '0 0 0 3px rgba(59, 130, 246, 0.1)' 
+                    : 'none',
+                  transition: 'all 0.2s'
                 }}
               />
               <button
@@ -1137,6 +1205,7 @@ const Ventas = () => {
 
     <input
       type="text"
+      ref={busquedaInputRef}
       placeholder="Buscar producto..."
       value={busqueda}
       onChange={(e) => setBusqueda(e.target.value)}
