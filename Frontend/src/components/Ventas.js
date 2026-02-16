@@ -981,87 +981,134 @@ const Ventas = () => {
             )}
           </div>
 
-          {/* Input oculto para código de barras - funcional en segundo plano */}
-          <input
-            ref={codigoInputRef}
-            type="text"
-            value={codigoBarras}
-            onChange={(e) => setCodigoBarras(e.target.value)}
-            onKeyPress={handleCodigoKeyPress}
-            disabled={buscandoCodigo}
-            style={{ 
-              position: 'absolute',
-              left: '-9999px',
-              width: '1px',
-              height: '1px',
-              opacity: 0
-            }}
-            aria-hidden="true"
-            tabIndex={-1}
-          />
-
-          {/* Búsqueda manual */}
+          {/* Lector de código de barras */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
+            backgroundColor: '#dbeafe',
+            padding: isMobile ? '0.625rem' : '0.75rem',
+            borderRadius: '0.5rem',
+            border: '2px solid #3b82f6',
             marginBottom: isMobile ? '0.5rem' : '0.75rem',
             flexShrink: 0
           }}>
-
-            {/* RECUADRO DE BÚSQUEDA */}
-            <div style={{
-              backgroundColor: theme.bg.card,
-              padding: isMobile ? '0.625rem' : '0.75rem',
-              borderRadius: '0.5rem',
-              border: `2px solid ${theme.border.light}`,
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem', 
+              marginBottom: '0.5rem' 
             }}>
-              <Search size={18} style={{ color: theme.text.secondary }} />
-
+              <Scan size={isMobile ? 18 : 20} style={{ color: '#1e40af' }} />
+              <label style={{ 
+                fontWeight: 600, 
+                color: '#1e40af', 
+                fontSize: isMobile ? '0.8125rem' : '0.875rem' 
+              }}>
+                Código de Barras
+              </label>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
+                ref={codigoInputRef}
                 type="text"
-                placeholder="Buscar producto..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Escanee o escriba..."
+                value={codigoBarras}
+                onChange={(e) => setCodigoBarras(e.target.value)}
+                onKeyPress={handleCodigoKeyPress}
+                disabled={buscandoCodigo}
+                className="input"
                 style={{ 
-                  border: 'none',
-                  outline: 'none',
                   flex: 1,
-                  fontSize: isMobile ? '16px' : '0.875rem',
-                  backgroundColor: 'transparent',
-                  color: theme.text.primary
+                  fontSize: isMobile ? '16px' : '1rem',
+                  backgroundColor: theme.input.bg,
+                  border: `1px solid ${theme.input.border}`,
+                  color: theme.text.primary,
+                  padding: '0.5rem',
+                  borderRadius: '0.375rem'
                 }}
               />
-            </div>
-
-            {/* BOTÓN FUERA DEL RECUADRO */}
-            {isMobile && (
               <button
-                type="button"
-                onClick={() => setShowScanner(true)}
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '0.5rem',
-                  border: 'none',
+                onClick={() => buscarProductoPorCodigo(codigoBarras)}
+                disabled={buscandoCodigo || !codigoBarras.trim()}
+                className="btn btn-primary"
+                style={{ 
+                  minWidth: isMobile ? '70px' : '80px', 
+                  padding: '0.5rem',
+                  fontSize: isMobile ? '0.8125rem' : '0.875rem',
                   backgroundColor: theme.brand.primary,
                   color: theme.text.white,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: (buscandoCodigo || !codigoBarras.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (buscandoCodigo || !codigoBarras.trim()) ? 0.6 : 1,
+                  fontWeight: 600
                 }}
-                title="Escanear"
               >
-                <Camera size={20} />
+                {buscandoCodigo ? 'Buscando...' : 'Buscar'}
               </button>
-            )}
-
+            </div>
           </div>
+
+          {/* Búsqueda manual */}
+         <div style={{
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+  marginBottom: isMobile ? '0.5rem' : '0.75rem',
+  flexShrink: 0
+}}>
+
+  {/* RECUADRO DE BÚSQUEDA */}
+  <div style={{
+    backgroundColor: theme.bg.card,
+    padding: isMobile ? '0.625rem' : '0.75rem',
+    borderRadius: '0.5rem',
+    border: `2px solid ${theme.border.light}`,
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  }}>
+    <Search size={18} style={{ color: theme.text.secondary }} />
+
+    <input
+      type="text"
+      placeholder="Buscar producto..."
+      value={busqueda}
+      onChange={(e) => setBusqueda(e.target.value)}
+      style={{ 
+        border: 'none',
+        outline: 'none',
+        flex: 1,
+        fontSize: isMobile ? '16px' : '0.875rem',
+        backgroundColor: 'transparent',
+        color: theme.text.primary
+      }}
+    />
+  </div>
+
+  {/* BOTÓN FUERA DEL RECUADRO */}
+  {isMobile && (
+    <button
+      type="button"
+      onClick={() => setShowScanner(true)}
+      style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: '0.5rem',
+        border: 'none',
+        backgroundColor: theme.brand.primary,
+        color: theme.text.white,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer'
+      }}
+      title="Escanear"
+    >
+      <Camera size={20} />
+    </button>
+  )}
+
+</div>
 
           {/* Cotizaciones en mobile */}
           {isMobile && cotizaciones.dolarPromedio && (
@@ -1319,16 +1366,15 @@ const Ventas = () => {
           </div>
         </div>
       )}
-      
       {showScanner && (
-        <BarcodeScanner
-          onClose={() => setShowScanner(false)}
-          onScanSuccess={(codigo) => {
-            setShowScanner(false);
-            buscarProductoPorCodigo(codigo);
-          }}
-        />
-      )}
+  <BarcodeScanner
+    onClose={() => setShowScanner(false)}
+    onScanSuccess={(codigo) => {
+      setShowScanner(false);
+      buscarProductoPorCodigo(codigo);
+    }}
+  />
+)}
     </div>
   );
 };
