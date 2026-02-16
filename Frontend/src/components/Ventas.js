@@ -227,13 +227,32 @@ const Ventas = () => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Inicialización y eventos globales
+  // Inicialización y eventos globales - MEJORADO PARA ESCÁNER FÍSICO
   useEffect(() => {
     cargarCotizaciones();
-    if (codigoInputRef.current && !isMobile) {
-      codigoInputRef.current.focus();
-    }
+    
+    // Mantener siempre el foco en el input del código de barras en desktop
+    const manteneFocoEnCodigo = () => {
+      if (!isMobile && codigoInputRef.current && !showCarritoModal) {
+        // Solo enfocar si no hay otro input/textarea enfocado (excepto el de búsqueda)
+        const activeElement = document.activeElement;
+        const esInputBusqueda = activeElement?.type === 'text' && activeElement !== codigoInputRef.current;
+        
+        if (!esInputBusqueda) {
+          codigoInputRef.current.focus();
+        }
+      }
+    };
 
+    // Enfocar al cargar
+    manteneFocoEnCodigo();
+
+    // Re-enfocar cuando se hace clic fuera
+    const handleClick = () => {
+      setTimeout(manteneFocoEnCodigo, 10);
+    };
+
+    // Manejar tecla espacio para finalizar venta
     const handleGlobalKeyPress = (e) => {
       if (e.key === ' ' && carrito.length > 0 && !isMobile) {
         if (document.activeElement !== codigoInputRef.current) {
@@ -243,9 +262,24 @@ const Ventas = () => {
       }
     };
 
+    document.addEventListener('click', handleClick);
     document.addEventListener('keydown', handleGlobalKeyPress);
-    return () => document.removeEventListener('keydown', handleGlobalKeyPress);
-  }, [carrito, isMobile]);
+    
+    return () => {
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('keydown', handleGlobalKeyPress);
+    };
+  }, [carrito, isMobile, showCarritoModal]);
+
+  // Re-enfocar después de agregar un producto
+  useEffect(() => {
+    if (!isMobile && codigoInputRef.current) {
+      const timer = setTimeout(() => {
+        codigoInputRef.current.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [carrito.length, isMobile]);
 
   // Debounce para búsqueda
   useEffect(() => {
@@ -405,7 +439,7 @@ const Ventas = () => {
     return metodoPago === 'efectivo' ? calcularPrecioEfectivo(precioConvertido) : precioConvertido;
   };
 
-  // Buscar producto por código de barras
+  // Buscar producto por código de barras - MEJORADO
   const buscarProductoPorCodigo = async (codigo) => {
     if (!codigo || codigo.trim() === '') return;
 
@@ -414,24 +448,42 @@ const Ventas = () => {
       const response = await buscarPorCodigo(codigo.trim());
       const producto = response.data;
       
+      // Verificar que el producto tenga stock
+      if (producto.stock <= 0) {
+        toast.warning('Producto sin stock disponible');
+        setCodigoBarras('');
+        if (codigoInputRef.current && !isMobile) {
+          codigoInputRef.current.focus();
+        }
+        return;
+      }
+      
+      // Agregar al carrito
       agregarAlCarrito({
         id: producto.id,
         nombre: producto.nombre,
-        precio: producto.precio_venta,
+        precio_venta: producto.precio_venta,
         stock: producto.stock,
         categoria: producto.categoria
       });
       
+      toast.success(`${producto.nombre} agregado al carrito`);
       setCodigoBarras('');
+      
+      // Re-enfocar el input
       if (codigoInputRef.current && !isMobile) {
-        codigoInputRef.current.focus();
+        setTimeout(() => {
+          codigoInputRef.current.focus();
+        }, 100);
       }
     } catch (error) {
       console.error('Error buscando producto:', error);
       toast.error('Producto no encontrado');
       setCodigoBarras('');
       if (codigoInputRef.current && !isMobile) {
-        codigoInputRef.current.focus();
+        setTimeout(() => {
+          codigoInputRef.current.focus();
+        }, 100);
       }
     } finally {
       setBuscandoCodigo(false);
@@ -556,7 +608,9 @@ const Ventas = () => {
         }
         
         if (codigoInputRef.current && !isMobile) {
-          codigoInputRef.current.focus();
+          setTimeout(() => {
+            codigoInputRef.current.focus();
+          }, 100);
         }
         
         return;
@@ -575,7 +629,9 @@ const Ventas = () => {
       }
       
       if (codigoInputRef.current && !isMobile) {
-        codigoInputRef.current.focus();
+        setTimeout(() => {
+          codigoInputRef.current.focus();
+        }, 100);
       }
     } catch (error) {
       console.error('Error creando venta:', error);
@@ -981,7 +1037,7 @@ const Ventas = () => {
             )}
           </div>
 
-          {/* Lector de código de barras */}
+          {/* Lector de código de barras - MEJORADO */}
           <div style={{
             backgroundColor: '#dbeafe',
             padding: isMobile ? '0.625rem' : '0.75rem',
@@ -1002,7 +1058,7 @@ const Ventas = () => {
                 color: '#1e40af', 
                 fontSize: isMobile ? '0.8125rem' : '0.875rem' 
               }}>
-                Código de Barras
+                Código de Barras {!isMobile && '(siempre activo)'}
               </label>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1013,6 +1069,16 @@ const Ventas = () => {
                 value={codigoBarras}
                 onChange={(e) => setCodigoBarras(e.target.value)}
                 onKeyPress={handleCodigoKeyPress}
+                onBlur={() => {
+                  // Volver a enfocar después de un breve delay si estamos en desktop
+                  if (!isMobile) {
+                    setTimeout(() => {
+                      if (codigoInputRef.current) {
+                        codigoInputRef.current.focus();
+                      }
+                    }, 100);
+                  }
+                }}
                 disabled={buscandoCodigo}
                 className="input"
                 style={{ 
