@@ -247,35 +247,85 @@ const Stock = () => {
   }, [loading, loadingMore, hasMore, skip]);
 
   const handleCrearProducto = async (data) => {
-    try {
-      await createProducto(data);
-      toast.success('Producto creado exitosamente');
-      setShowForm(false);
-      setProductos([]);
-      setSkip(0);
-      setHasMore(true);
-      cargarProductos(0, true);
-    } catch (error) {
-      console.error('Error creando producto:', error);
-      toast.error('Error al crear producto');
+  try {
+    await createProducto(data);
+    toast.success(`Producto "${data.nombre}" creado exitosamente`);
+    setShowForm(false);
+    setProductos([]);
+    setSkip(0);
+    setHasMore(true);
+    cargarProductos(0, true);
+  } catch (error) {
+    console.error('Error creando producto:', error);
+    
+    // Mensajes específicos según el tipo de error
+    if (error.response?.status === 400) {
+      const errorMsg = error.response?.data?.detail || error.response?.data?.message;
+      
+      if (errorMsg?.toLowerCase().includes('código de barras') || 
+          errorMsg?.toLowerCase().includes('codigo de barras') ||
+          errorMsg?.toLowerCase().includes('barcode')) {
+        toast.error('El código de barras ya existe. Por favor, verifica e ingresa uno diferente.');
+      } else {
+        toast.error(errorMsg || 'Datos inválidos. Verifica la información ingresada.');
+      }
+    } else if (error.response?.status === 409) {
+      toast.error('El producto ya existe en el sistema. Verifica el código de barras.');
+    } else if (error.response?.status === 500) {
+      toast.error('Error del servidor. Por favor, intenta nuevamente en unos momentos.');
+    } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      toast.error('La conexión tardó demasiado. Verifica tu internet e intenta nuevamente.');
+    } else if (!error.response) {
+      toast.error('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+    } else {
+      toast.error('Error al crear el producto. Por favor, intenta nuevamente.');
     }
-  };
+  }
+};
 
-  const handleActualizarProducto = async (data) => {
-    try {
-      await updateProducto(productoEdit.id, data);
-      toast.success('Producto actualizado exitosamente');
-      setShowForm(false);
-      setProductoEdit(null);
+const handleActualizarProducto = async (data) => {
+  try {
+    await updateProducto(productoEdit.id, data);
+    toast.success(`Producto "${data.nombre}" actualizado exitosamente`);
+    setShowForm(false);
+    setProductoEdit(null);
+    setProductos([]);
+    setSkip(0);
+    setHasMore(true);
+    cargarProductos(0, true);
+  } catch (error) {
+    console.error('Error actualizando producto:', error);
+    
+    // Mensajes específicos según el tipo de error
+    if (error.response?.status === 400) {
+      const errorMsg = error.response?.data?.detail || error.response?.data?.message;
+      
+      if (errorMsg?.toLowerCase().includes('código de barras') || 
+          errorMsg?.toLowerCase().includes('codigo de barras') ||
+          errorMsg?.toLowerCase().includes('barcode')) {
+        toast.error('El código de barras ya existe en otro producto. Por favor, verifica e ingresa uno diferente.');
+      } else {
+        toast.error(errorMsg || 'Datos inválidos. Verifica la información ingresada.');
+      }
+    } else if (error.response?.status === 404) {
+      toast.error('El producto no existe o fue eliminado. Actualiza la lista de productos.');
       setProductos([]);
       setSkip(0);
       setHasMore(true);
       cargarProductos(0, true);
-    } catch (error) {
-      console.error('Error actualizando producto:', error);
-      toast.error('Error al actualizar producto');
+    } else if (error.response?.status === 409) {
+      toast.error('Conflicto de datos. El código de barras ya existe en otro producto.');
+    } else if (error.response?.status === 500) {
+      toast.error('Error del servidor. Por favor, intenta nuevamente en unos momentos.');
+    } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      toast.error('La conexión tardó demasiado. Verifica tu internet e intenta nuevamente.');
+    } else if (!error.response) {
+      toast.error('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+    } else {
+      toast.error('Error al actualizar el producto. Por favor, intenta nuevamente.');
     }
-  };
+  }
+};
 
   const confirmarEliminarProducto = (producto) => {
     setProductoAEliminar(producto);
