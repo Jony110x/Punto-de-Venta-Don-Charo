@@ -986,7 +986,7 @@ const Ventas = () => {
   return (
     <div style={{ 
       padding: isMobile ? '0.5rem' : '1rem',
-      height: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 140px)',
+      height: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 100px)',
       overflow: 'hidden'
     }}>
       {/* Animación de pulso para skeletons */}
