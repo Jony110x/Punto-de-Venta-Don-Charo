@@ -30,6 +30,7 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
     try {
       setLoading(true);
       const response = await getUserProfile();
+      console.log("USER PROFILE RESPONSE:", response.data); 
       setUserData(response.data);
       setFormData({
         username: response.data.username || '',
