@@ -546,6 +546,10 @@ function AppContent() {
     (item) => item.id === vistaActual
   )?.componente;
 
+
+  console.log("showUserProfile:", showUserProfile);
+
+  
   return (
     <div style={{ minHeight: "100vh", backgroundColor: theme.bg.secondary }}>
       <OfflineBanner />
