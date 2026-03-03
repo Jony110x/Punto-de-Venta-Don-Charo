@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import {
   Home,
@@ -841,6 +842,29 @@ function AppContent() {
               </button>
             );
           })}
+
+          {/* Botón Dark Mode en menú móvil */}
+<button
+  onClick={toggleTheme}
+  style={{
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "1rem 1.5rem",
+    fontWeight: 600,
+    border: "none",
+    backgroundColor: theme.bg.primary,
+    color: theme.text.secondary,
+    cursor: "pointer",
+    fontSize: "1rem",
+    textAlign: "left",
+    borderTop: `1px solid ${theme.border.light}`
+  }}
+>
+  {isDark ? <Sun size={20} /> : <Moon size={20} />}
+  {isDark ? "Modo Claro" : "Modo Oscuro"}
+</button>
           
           {/* Botón logout en menú móvil */}
           <button
