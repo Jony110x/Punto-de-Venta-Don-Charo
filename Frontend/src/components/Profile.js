@@ -25,6 +25,8 @@ const Profile = ({ onClose, currentUser, onUserUpdate }) => {
     cargarDatosUsuario();
   }, []);
 
+  console.log("Profile recibe:", currentUser);
+
   // Cargar datos del perfil del usuario
   const cargarDatosUsuario = async () => {
     try {
