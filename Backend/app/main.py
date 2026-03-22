@@ -69,13 +69,13 @@ def on_startup():
     finally:
         db.close()
 
-app.include_router(auth.router)
-app.include_router(productos.router)
-app.include_router(ventas.router)
-app.include_router(reportes.router)
-app.include_router(profile.router)
-app.include_router(users.router)
-app.include_router(ventasDetalle.router)
+app.include_router(productos.router, prefix="/api")
+app.include_router(profile.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
+app.include_router(ventas.router, prefix="/api")
+app.include_router(reportes.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
+app.include_router(ventasDetalle.router, prefix="/api")
 
 @app.get("/")
 def root():
