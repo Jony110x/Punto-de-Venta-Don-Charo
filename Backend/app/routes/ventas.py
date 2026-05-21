@@ -4,6 +4,7 @@ from typing import List
 from app import models, schemas
 from app.database import get_db
 from app.auth import get_current_user
+from decimal import Decimal
 
 router = APIRouter(prefix="/ventas", tags=["ventas"])
 
@@ -14,7 +15,8 @@ def crear_venta(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     # Calcular total
-    total = sum(item.cantidad * item.precio_unitario for item in venta.items)
+    #total = sum(item.cantidad * item.precio_unitario for item in venta.items)
+    total = sum(Decimal(str(item.cantidad)) * Decimal(str(item.precio_unitario)) for item in venta.items)
     
     # Crear venta
     db_venta = models.Venta(
