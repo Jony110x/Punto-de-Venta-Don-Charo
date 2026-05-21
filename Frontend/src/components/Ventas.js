@@ -378,7 +378,7 @@ function CarritoContent({
                   </button>
 
                   <input
-                    type="number"
+                    type="text"
                     inputMode="decimal"
                     value={inputValue}
                     min="0.001"
@@ -392,7 +392,7 @@ function CarritoContent({
                         clearTimeout(debounceTimers.current[item.producto_id]);
                       }
                       debounceTimers.current[item.producto_id] = setTimeout(() => {
-                        const parsed = parseFloat(raw);
+                        const parsed = parseFloat(raw.replace(",", "."));
                         if (!isNaN(parsed) && parsed > 0) {
                           modificarCantidad(item.producto_id, parseFloat(parsed.toFixed(4)));
                         }
@@ -401,7 +401,7 @@ function CarritoContent({
                     }}
                     onBlur={(e) => {
                       // Al salir, limpiar el valor temporal; si era inválido/0, eliminar el item
-                      const parsed = parseFloat(e.target.value);
+                      const parsed = parseFloat(e.target.value.replace(",", "."));
                       setCantidadInputValues(prev => {
                         const next = { ...prev };
                         delete next[item.producto_id];
@@ -854,8 +854,8 @@ const Ventas = () => {
       const ventaData = {
         items: carrito.map(item => ({
           producto_id: item.producto_id,
-          cantidad: item.cantidad,
-          precio_unitario: item.precio_unitario
+          cantidad: Number(String(item.cantidad).replace(",", ".")),
+          precio_unitario: Number(String(item.precio_unitario).replace(",", "."))
         })),
         metodo_pago: metodoPago
       };
@@ -882,6 +882,7 @@ const Ventas = () => {
         return;
       }
 
+      console.log("VENTA DATA:", ventaData);
       await createVenta(ventaData);
       toast.success('Venta registrada exitosamente');
       setCarrito([]);
@@ -890,7 +891,7 @@ const Ventas = () => {
       if (busquedaDebounced.length > 0) { setProductos([]); setSkip(0); setHasMore(true); cargarProductos(0, true); }
       if (codigoInputRef.current && !isMobile) requestAnimationFrame(() => { if (codigoInputRef.current) codigoInputRef.current.focus(); });
     } catch (error) {
-      console.error('Error creando venta:', error);
+      console.error('Error creando venta:', error.response?.data || error);
       toast.error('Error al registrar la venta');
     }
   };

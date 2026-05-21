@@ -33,7 +33,7 @@ class Producto(Base):
     precio_costo = Column(Float, nullable=False, default=0)
     margen_porcentaje = Column(Float, nullable=False, default=25.0)  
     precio_venta = Column(Float, nullable=False) 
-    stock = Column(Integer, default=0)
+    stock = Column(Numeric(10,4))
     stock_minimo = Column(Integer, default=10)
     categoria = Column(String(100))
     codigo_barras = Column(String(50), unique=True, index=True)
