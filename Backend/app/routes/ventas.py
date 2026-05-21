@@ -15,7 +15,6 @@ def crear_venta(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     # Calcular total
-    #total = sum(item.cantidad * item.precio_unitario for item in venta.items)
     total = sum(Decimal(str(item.cantidad)) * Decimal(str(item.precio_unitario)) for item in venta.items)
     
     # Crear venta
@@ -35,16 +34,16 @@ def crear_venta(
             db.rollback()
             raise HTTPException(status_code=404, detail=f"Producto {item.producto_id} no encontrado")
         
-        if producto.stock < item.cantidad:
+        if producto.stock < float(item.cantidad):
             db.rollback()
             raise HTTPException(status_code=400, detail=f"Stock insuficiente para {producto.nombre}")
         
         db_item = models.ItemVenta(
-            venta_id=db_venta.id,
-            producto_id=item.producto_id,
-            cantidad=item.cantidad,
-            precio_unitario=item.precio_unitario,
-            subtotal=item.cantidad * item.precio_unitario
+        venta_id=db_venta.id,
+        producto_id=item.producto_id,
+        cantidad=item.cantidad,
+        precio_unitario=item.precio_unitario,
+        subtotal=float(item.cantidad) * item.precio_unitario
         )
         db.add(db_item)
         producto.stock -= item.cantidad
