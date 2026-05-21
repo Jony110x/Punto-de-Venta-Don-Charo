@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
 import enum
+from sqlalchemy import Numeric
 
 class RolEnum(str, enum.Enum):
     SUPERADMIN = "superadmin"
@@ -61,7 +62,7 @@ class ItemVenta(Base):
     id = Column(Integer, primary_key=True, index=True)
     venta_id = Column(Integer, ForeignKey("ventas.id"))
     producto_id = Column(Integer, ForeignKey("productos.id"))
-    cantidad = Column(Integer, nullable=False)
+    cantidad = Column(Numeric(10, 4), nullable=False)
     precio_unitario = Column(Float, nullable=False)
     subtotal = Column(Float, nullable=False)
     

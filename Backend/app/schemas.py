@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional, List
+from decimal import Decimal
 
 # Schemas para Usuarios
 class UsuarioBase(BaseModel):
@@ -108,7 +109,7 @@ class ProductoBusqueda(BaseModel):
 # Schemas para Ventas
 class ItemVentaCreate(BaseModel):
     producto_id: int
-    cantidad: int
+    cantidad: Decimal
     precio_unitario: float
 
 class ItemVenta(BaseModel):
