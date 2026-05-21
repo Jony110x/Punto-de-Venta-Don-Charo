@@ -49,7 +49,7 @@ class ProductoBase(BaseModel):
     descripcion: Optional[str] = None
     precio_costo: float
     margen_porcentaje: float = 25.0  
-    stock: int
+    stock: float
     stock_minimo: int = 10
     categoria: Optional[str] = None
     codigo_barras: Optional[str] = None
@@ -61,7 +61,7 @@ class ProductoUpdate(BaseModel):
     nombre: Optional[str] = None
     precio_costo: Optional[float] = None
     margen_porcentaje: Optional[float] = None  
-    stock: Optional[int] = None
+    stock: Optional[float] = None
     categoria: Optional[str] = None
     codigo_barras: Optional[str] = None
 
@@ -72,7 +72,7 @@ class Producto(BaseModel):
     precio_costo: float
     margen_porcentaje: float  
     precio_venta: float  
-    stock: int
+    stock: float
     stock_minimo: int
     categoria: Optional[str]
     codigo_barras: Optional[str]
@@ -115,7 +115,7 @@ class ItemVentaCreate(BaseModel):
 class ItemVenta(BaseModel):
     id: int
     producto_id: int
-    cantidad: int
+    cantidad: float
     precio_unitario: float
     subtotal: float
     
